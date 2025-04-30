@@ -112,10 +112,11 @@ public class BoardNetData : DataType<BoardNetData>
         {
             int.TryParse(arr[0], out OriginCoordinate);
             int.TryParse(arr[1], out TargetCoordinate);
+            Logger.Log(LogLevel.Warn, "OnlineTest", $"I'm in read {BoardManagerEntity.Instance.randomNumber}");
             BoardManagerEntity.Instance.MoveReceivedByNetwork(OriginCoordinate, TargetCoordinate);
         }
         else
-            Logger.Log(LogLevel.Error, "CelesteChess", $"Invalid data format: {Info}");
+            Logger.Log(LogLevel.Error, "Mod", $"Invalid data format: {Info}");
     }
     
     protected override void Write(CelesteNetBinaryWriter writer)
@@ -126,20 +127,44 @@ public class BoardNetData : DataType<BoardNetData>
 
 public class InformationComponent : CelesteNetGameComponent
 {
+    bool hookMoved = false;
+    
     static CelesteNetClientContext ctx;
     public static Dictionary<uint, int[]> Information = new();
+    
+    public InformationComponent(CelesteNetClientContext context, Game game) : base(context, game)
+    {
+        ctx = context;
+    }
 
     public override void Start()
     {
         base.Start();
         if (Client == null)
             return;
+        Logger.Log(LogLevel.Warn, "Mod", $"I'm in START NETWORK {BoardManagerEntity.Instance.randomNumber}");
         BoardManagerEntity.Instance.onMove += SendGameData;
     }
 
-    public InformationComponent(CelesteNetClientContext context, Game game) : base(context, game)
+    public override void Update(GameTime gameTime)
     {
-        ctx = context;
+        base.Update(gameTime);
+        if(!hookMoved && BoardManagerEntity.Instance != null)
+        {
+            hookMoved = true;
+            Logger.Log(LogLevel.Warn, "Mod", $"I'm in UPDATE NETWORK AND RECONNECTED {BoardManagerEntity.Instance.randomNumber}");
+            BoardManagerEntity.Instance.onMove += SendGameData;
+        }
+    }
+
+    public override void Disconnect(bool forceDispose = false)
+    {
+        base.Disconnect(forceDispose);
+        if (Client == null)
+            return;
+        if(BoardManagerEntity.Instance != null)
+            BoardManagerEntity.Instance.onMove -= SendGameData;
+        hookMoved = false;
     }
 
     public void SendGameData(int orig, int target)
@@ -147,9 +172,10 @@ public class InformationComponent : CelesteNetGameComponent
         BoardManagerEntity manager = BoardManagerEntity.Instance;
         if (manager == null)
         {
-            Logger.Log(LogLevel.Error, "CelesteChess", "BoardManagerEntity is null");
+            Logger.Log(LogLevel.Error, "Mod", "BoardManagerEntity is null");
             return;
         }
+        Logger.Log(LogLevel.Warn, "Mod", $"SEND GAME DATA: {orig}, {target}");
         string dataToSend = $"{orig},{target}";
         Send(dataToSend);
     }

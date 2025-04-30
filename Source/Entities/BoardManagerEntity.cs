@@ -29,7 +29,9 @@ public class BoardManagerEntity : Entity
     public int test3 = 3;
     
     public Action<int, int> onMove;
-
+    
+    public int randomNumber = 0;
+    
     public BoardManagerEntity(EntityData data, Vector2 offset) : base(data.Position + offset) { }
 
     public override void Awake(Scene scene)
@@ -43,10 +45,18 @@ public class BoardManagerEntity : Entity
                 tiles.Add(tile);
             }
         }
+        randomNumber = Calc.Random.Next(0, 1000);
+        Logger.Log(LogLevel.Warn, "Chess", $"CREATING A NEW INSTANCE : {randomNumber}");
         Instance = this;
-        
         AssignTriggerValues();
         SpawnChessPieces();
+    }
+
+    public override void Removed(Scene scene)
+    {
+        base.Removed(scene);
+        Logger.Log(LogLevel.Warn, "Chess", $"REMOVING INSTANCE : {randomNumber}");
+        Instance = null;
     }
 
     void AssignTriggerValues()
@@ -136,8 +146,7 @@ public class BoardManagerEntity : Entity
             Logger.Log(LogLevel.Warn, "Chess", "No valid moves");
             return;
         }
-        Logger.Log(LogLevel.Warn, "Mod", $"I calculated {validMoves.Count} valid moves for {piece.pieceType} {piece.ChessPieceColor}");
-        //Check for checks
+        
         List<ChessTileEntity> safe = new();
         foreach (ChessTileEntity t in validMoves)
         {
