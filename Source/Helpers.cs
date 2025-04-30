@@ -174,23 +174,3 @@ public class InformationComponent : CelesteNetGameComponent
             };
     }
 }
-public static class ChessNetHelper
-{
-    public static int[] TryGetData(BoardManagerEntity manager, out int[] data)
-    {
-        data = null;
-        if (manager == null)
-            return null;
-
-        ChessPieceEntity piece = manager.GetPlayer()?.Holding?.Entity as ChessPieceEntity;
-        if (piece == null)
-            return null;
-
-        int[] arr = new int[3];
-        arr[0] = (int)piece.tile.gridCoordinates.X;
-        arr[1] = (int)piece.tile.gridCoordinates.Y;
-        arr[2] = (int)piece.pieceType;
-        
-        return arr;
-    }
-}
