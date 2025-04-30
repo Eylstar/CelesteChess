@@ -166,7 +166,7 @@ public class BoardManagerEntity : Entity
             return;
 
         if (fromSource)
-            onMove?.Invoke(tile.gridPosition, piece.tile.gridPosition);
+            onMove?.Invoke(piece.tile.gridPosition, tile.gridPosition);
         
         if (tile.piece != null)
         {
