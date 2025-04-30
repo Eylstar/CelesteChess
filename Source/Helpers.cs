@@ -7,34 +7,43 @@ using Mono.Cecil.Cil;
 using Monocle;
 using MonoMod.Cil;
 
+using Celeste.Mod.CelesteNet;
+using Celeste.Mod.CelesteNet.Client;
+using Celeste.Mod.CelesteNet.DataTypes;
+
 namespace Celeste.Mod.CelesteChess;
 
-public static class Helpers
+public static class MoveHelper
 {
-    public static void MoveSmoothlyEntity(Entity entity, Vector2 targetPosition, float speed)
+    public static void MoveSmoothlyEntity(Entity entity, Vector2 targetPosition, float duration)
     {
         if (entity == null) return;
-        entity.Add(new Coroutine(EntityMove(entity, targetPosition, speed)));
+        entity.Add(new Coroutine(EntityMove(entity, targetPosition, duration)));
     }
     
-    public static void MoveSmoothlyEntityInvoke(Entity entity, Vector2 targetPosition, float speed, Action onComplete)
+    public static void MoveSmoothlyEntity(Entity entity, Vector2 targetPosition, float duration, Action onComplete)
     {
         if (entity == null) return;
-        entity.Add(new Coroutine(EntityMove(entity, targetPosition, speed)));
+        entity.Add(new Coroutine(EntityMove(entity, targetPosition, duration, onComplete)));
     }
     
-    static IEnumerator EntityMove(Entity entity, Vector2 targetPosition, float speed)
+    static IEnumerator EntityMove(Entity entity, Vector2 targetPosition, float duration, Action onComplete = null)
     {
         if (entity == null) yield break;
-        while (Vector2.Distance(entity.Position, targetPosition) > 1f)
+        Vector2 startPosition = entity.Position;
+        float elapsedTime = 0f;
+
+        while (elapsedTime < duration)
         {
-            entity.Position = Vector2.Lerp(entity.Position, targetPosition, speed * Engine.DeltaTime);
+            elapsedTime += Engine.DeltaTime;
+            float t = MathHelper.Clamp(elapsedTime / duration, 0f, 1f);
+            float ease = Ease.SineOut(t);
+            entity.Position = Vector2.Lerp(startPosition, targetPosition, ease);
             yield return null;
         }
+        entity.Position = targetPosition;
+        onComplete?.Invoke();
     }
-    
-    
-    
     
     public static void MoveSmoothlyEntityHorizontal(Entity entity, float targetX, float duration)
     {
@@ -59,5 +68,18 @@ public static class Helpers
         }
 
         entity.Position = targetPosition;
+    }
+}
+
+public class NetHelper
+{
+    public static void SendMove(ChessPieceEntity piece, ChessTileEntity tile)
+    {
+        if (piece == null || tile == null) return;
+        CelesteNetClient client = CelesteNetClient.Instance;
+        if (client == null || !client.IsConnected) return;
+
+        ChessMove move = new(piece, tile);
+        client.Send(new NetMessage(NetMessageType.ChessMove, move));
     }
 }
