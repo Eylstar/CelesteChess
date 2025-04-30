@@ -143,6 +143,8 @@ public class InformationComponent : CelesteNetGameComponent
         base.Start();
         if (Client == null)
             return;
+        if (BoardManagerEntity.Instance == null)
+            return;
         Logger.Log(LogLevel.Warn, "CelesteChess", $"I'm in START NETWORK {BoardManagerEntity.Instance.randomNumber}");
         boardManager = BoardManagerEntity.Instance;
         boardManager.onMove += SendGameData;
