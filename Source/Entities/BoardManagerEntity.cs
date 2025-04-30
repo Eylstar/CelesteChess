@@ -29,6 +29,10 @@ public class BoardManagerEntity : Entity
     public int test3 = 3;
     
     public Action onMove;
+    
+    public int test1 = 1;
+    public int test2 = 2;
+    public int test3 = 3;
 
     public BoardManagerEntity(EntityData data, Vector2 offset) : base(data.Position + offset) { }
 
