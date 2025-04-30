@@ -16,15 +16,17 @@ public class CelesteChessModule : EverestModule {
     {
         On.Celeste.Player.Drop += ChessHooks.OnDrop;
         On.Celeste.TheoCrystal.OnRelease += ChessHooks.OnRelease;
-        On.Celeste.TheoCrystal.OnPickup += ChessHooks.OnPickup;
+        On.Celeste.Holdable.Carry += ChessHooks.OnCarry;
         IL.Celeste.Player.NormalUpdate += ChessHooks.IL_DropStopping;
+        On.Celeste.Player.Pickup += ChessHooks.OnPickup;
     }
 
     public override void Unload()
     {
         On.Celeste.Player.Drop -= ChessHooks.OnDrop;
         On.Celeste.TheoCrystal.OnRelease -= ChessHooks.OnRelease;
-        On.Celeste.TheoCrystal.OnPickup -= ChessHooks.OnPickup;
+        On.Celeste.Holdable.Carry -= ChessHooks.OnCarry;
         IL.Celeste.Player.NormalUpdate -= ChessHooks.IL_DropStopping;
+        On.Celeste.Player.Pickup -= ChessHooks.OnPickup;
     }
 }

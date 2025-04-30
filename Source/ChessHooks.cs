@@ -22,65 +22,120 @@ public class ChessHooks
         if (self is ChessPieceEntity piece)
         {
             orig(self, new Vector2(0, 0));
-            ChessTileTrigger tile = TileCoordinatesDetection(piece);
+
+            bool validMove = true;
             
-            if (tile == null) return;
+            ChessTileEntity tile = TileOverlapDetection(piece);
+            if (tile == null || !tile.isValidForActualMove)
+            {
+                tile = piece.tile;
+                validMove = false;
+            }
             
-            Logger.Log(LogLevel.Warn, "Chess", $"{piece.ChessPieceColor} {piece.pieceType} Dropped in: {tile.gridPosition} ({tile.gridCoordinates})");
-            Helpers.MoveSmoothlyEntityHorizontal(piece, tile.Position.X + tile.Width / 2, 0.1f);
+            Holdable holdable = piece.Get<Holdable>();
+            holdable.Active = false;
             
+            MoveHelper.MoveSmoothlyEntity(piece, tile.Position + new Vector2(0, 6), 0.25f, () => { 
+                holdable.Active = true;
+                BoardManagerEntity.Instance.ComputeMove(piece, tile, validMove);
+            });
             return;
         }
         orig(self, force);
     }
     
-    public static void OnPickup(On.Celeste.TheoCrystal.orig_OnPickup orig, TheoCrystal self)
+    public static bool OnPickup(On.Celeste.Player.orig_Pickup orig, Player self, Holdable hold)
     {
-        if (self is ChessPieceEntity piece)
+        if (!hold.Active)
         {
-            ChessTileTrigger tile = TileCoordinatesDetection(piece);
-            Logger.Log(LogLevel.Warn, "Chess", $"{piece.ChessPieceColor} {piece.pieceType} Grabbed in: {tile.gridPosition} ({tile.gridCoordinates})");
+            Logger.Log(LogLevel.Warn, "Mod", "Holdable is not active");
+            return false;
         }
-        orig(self);
+        
+        if (hold.Entity is ChessPieceEntity piece)
+        {
+            if (BoardManagerEntity.Instance.whiteTurn != piece.IsWhite())
+                return false;
+
+            ChessTileEntity tile = TileOverlapDetection(piece);
+            BoardManagerEntity.Instance.hoveredTile = tile;
+            BoardManagerEntity boardManager = piece.Scene.Tracker.GetEntity<BoardManagerEntity>();
+            if (boardManager == null) return false;
+            Logger.Log(LogLevel.Warn, "Mod", $"I start to grab and I'm in check: {(boardManager.whiteTurn ? boardManager.whiteCheck : boardManager.blackCheck)}");
+            boardManager.CalculateValidMoves(tile, piece);
+        }
+        
+        return orig(self, hold);
+    }
+    
+    
+    public static void OnCarry(On.Celeste.Holdable.orig_Carry orig, Holdable self, Vector2 pos)
+    {
+        if (self.Entity is ChessPieceEntity piece)
+        {
+            ChessTileEntity tile = TileOverlapDetection(piece);
+            if (tile != null)
+            {
+                tile.colorTarget = tile.isValidForActualMove ? ColorTarget.WalkGrabValid : ColorTarget.None;
+                ChessTileEntity storedHoveredTile = BoardManagerEntity.Instance.hoveredTile;
+                if (storedHoveredTile!= null && tile != storedHoveredTile)
+                {
+                    storedHoveredTile.colorTarget = storedHoveredTile.isValidForActualMove ? ColorTarget.PossibleDestination : ColorTarget.None;
+                    BoardManagerEntity.Instance.hoveredTile = tile;
+                }
+            }
+        }
+        orig(self, pos);
     }
 
-    static ChessTileTrigger TileCoordinatesDetection(ChessPieceEntity piece)
+    static List<ChessTileEntity> getAllTiles()
     {
-        ChessTileTrigger correctTile = null;
-        List<ChessTileTrigger> triggersInside = new();
+        List<ChessTileEntity> tiles = new();
+        foreach (Entity entity in Engine.Scene.Tracker.GetEntities<ChessTileEntity>())
+        {
+            if (entity is ChessTileEntity tile)
+                tiles.Add(tile);
+        }
+        return tiles;
+    }
+
+    static ChessTileEntity TileOverlapDetection(ChessPieceEntity piece)
+    {
+        ChessTileEntity correctTile = null;
+        List<ChessTileEntity> allTiles = getAllTiles();
+        List<ChessTileEntity> tilesInside = new();
+        
+        foreach (ChessTileEntity tile in allTiles)
+        {
+            if (tile.CollideCheck(piece))
+                tilesInside.Add(tile);
+        }
         
         Player player = piece.Scene.Tracker.GetEntity<Player>();
-        Tuple<int, Vector2> error = new(-1, new Vector2(-1, -1));
-        
-        foreach (Trigger trigger in player.triggersInside)
-        {
-            if (trigger is not ChessTileTrigger chessTileTrigger) continue;
-            triggersInside.Add(chessTileTrigger);
-        }
 
-        switch (triggersInside.Count)
+        switch (tilesInside.Count)
         {
             case 0:
+                Logger.Log(LogLevel.Warn, "Chess", $"{piece.ChessPieceColor} {piece.pieceType} Dropped in: No Tile");
                 return null;
             case 1:
-                correctTile = triggersInside[0];
+                correctTile = tilesInside[0];
                 break;
             case > 1:
-                ChessTileTrigger closestTrigger = null;
+                ChessTileEntity closestTile = null;
                 float closestDistance = 1000;
-                foreach (ChessTileTrigger trigger in triggersInside)
+                foreach (ChessTileEntity tile in tilesInside)
                 {
-                    float distance = Vector2.Distance(player.Position, trigger.Position);
+                    float distance = Vector2.Distance(player.Position, tile.Position);
                     if (distance < closestDistance)
                     {
                         closestDistance = distance;
-                        closestTrigger = trigger;
+                        closestTile = tile;
                     }
                 }
-                correctTile = closestTrigger;
+                correctTile = closestTile;
                 break;
         }
-        
         return correctTile;
     }
 

@@ -19,7 +19,7 @@ public class PassThroughEntity : JumpthruPlatform
     public override void Update()
     {
         base.Update();
-        if (TryGetPlayer(out player) && (player.Ducking || Input.MoveY > 0) && HasPlayerRider() && Input.Jump.Pressed)
+        if (TryGetPlayer(out player) && (player.Ducking || Input.Aim.Value.Y > 0.3f) && HasPlayerRider() && Input.Jump.Pressed)
         {
             Input.Jump.ConsumePress();
             player.IgnoreJumpThrus = true;

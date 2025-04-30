@@ -3,9 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Celeste.Mod.Helpers;
 using Microsoft.Xna.Framework;
-using Mono.Cecil.Cil;
 using Monocle;
-using MonoMod.Cil;
 
 using Celeste.Mod.CelesteNet;
 using Celeste.Mod.CelesteNet.Client;
@@ -71,15 +69,122 @@ public static class MoveHelper
     }
 }
 
-public class NetHelper
+public class BoardNetData : DataType<BoardNetData>
 {
-    public static void SendMove(ChessPieceEntity piece, ChessTileEntity tile)
+    static BoardNetData()
     {
-        if (piece == null || tile == null) return;
-        CelesteNetClient client = CelesteNetClient.Instance;
-        if (client == null || !client.IsConnected) return;
+        DataID = "CelesteChess/Data";
+    }
+    
+    public DataPlayerInfo Player;
+    public string Info;
 
-        ChessMove move = new(piece, tile);
-        client.Send(new NetMessage(NetMessageType.ChessMove, move));
+    public int OriginCoordinate;
+    public int TargetCoordinate;
+    public int PieceType;
+
+    public BoardNetData() { }
+
+    public override bool FilterHandle(DataContext ctx) 
+        => Player != null;
+    
+    public override MetaType[] GenerateMeta(DataContext ctx) => new MetaType[]
+    {
+        new MetaPlayerUpdate(Player),
+        new MetaOrderedUpdate(Player?.ID ?? uint.MaxValue)
+    };
+
+    public override void FixupMeta(DataContext ctx)
+    {
+        MetaPlayerUpdate upd = Get<MetaPlayerUpdate>(ctx);
+        MetaOrderedUpdate order = Get<MetaOrderedUpdate>(ctx);
+        order.ID = upd;
+        Player = upd.Player;
+    }
+
+    protected override void Read(CelesteNetBinaryReader reader)
+    {
+        Logger.Log(LogLevel.Warn, "CelesteChess", $"Reading data: {reader.ReadNetString()}");
+        Info = reader.ReadString();
+        string[] arr = Info.Split(',', StringSplitOptions.TrimEntries);
+        if (arr.Length == 3)
+        {
+            int.TryParse(arr[0], out OriginCoordinate);
+            int.TryParse(arr[1], out TargetCoordinate);
+            int.TryParse(arr[2], out PieceType); }
+        else
+            Logger.Log(LogLevel.Error, "CelesteChess", $"Invalid data format: {Info}");
+    }
+    
+    protected override void Write(CelesteNetBinaryWriter writer)
+    {
+        writer.WriteNetString(Info);
+    }
+}
+
+public class InformationComponent : CelesteNetGameComponent
+{
+    static CelesteNetClientContext ctx;
+    public static Dictionary<uint, int[]> Information = new();
+    
+    public InformationComponent(CelesteNetClientContext context, Game game) : base(context, game)
+    {
+        ctx = context;
+    }
+    
+    public void Send(string info)
+    {
+        Client?.SendAndHandle(new BoardNetData()
+        {
+            Info = info,
+            Player = Client.PlayerInfo, 
+        });
+    }
+
+    int[] BoardDataGetter
+    {
+        get
+        {
+            if (BoardManagerEntity.Instance == null)
+                return null;
+            return ChessNetHelper.TryGetData(BoardManagerEntity.Instance, out int[] data);
+        }
+    }
+
+    public void SendGameData()
+    {
+        string dataToSend = $"{BoardDataGetter[0]},{BoardDataGetter[1]},{BoardDataGetter[2]}";
+        Send(dataToSend);
+    }
+
+    public void Handle(CelesteNetConnection con, BoardNetData data)
+    {
+        if (data.Player != null)
+            Information[data.Player.ID] = new int[]
+            {
+                data.OriginCoordinate,
+                data.TargetCoordinate,
+                data.PieceType
+            };
+    }
+}
+public static class ChessNetHelper
+{
+    public static int[] TryGetData(BoardManagerEntity manager, out int[] data)
+    {
+        data = null;
+        if (manager == null)
+            return null;
+
+        ChessPieceEntity piece = manager.GetPlayer()?.Holding?.Entity as ChessPieceEntity;
+        if (piece == null)
+            return null;
+
+        int[] arr = new int[3];
+        arr[0] = (int)piece.tile.gridCoordinates.X;
+        arr[1] = (int)piece.tile.gridCoordinates.Y;
+        arr[2] = (int)piece.pieceType;
+        
+        return arr;
     }
 }

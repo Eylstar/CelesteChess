@@ -7,27 +7,32 @@ namespace Celeste.Mod.CelesteChess;
 [CustomEntity("CelesteChess/ChessPiece")]
 public class ChessPieceEntity : TheoCrystal
 {
+    public ChessTileEntity tile;
     Holdable holdable;
-
+    
+    public bool movedOnce = false;
+    
     public Piece pieceType;
     public ChessPieceColor ChessPieceColor;
     
-    Image piece;
-    Sprite crystal;
-    
     Player player;
+    Image piece;
+    Color pieceTint = new(0.5f, 0.5f, 0.5f);
     
-    public ChessPieceEntity(EntityData data, Vector2 offset) : base(data, offset)
-    {
-        pieceType = data.Enum("piece", Piece.Pawn);
-        ChessPieceColor = data.Enum("color", ChessPieceColor.White);
-    }
+    public ChessPieceEntity(EntityData data, Vector2 offset) : base(data, offset) { }
 
     public override void Added(Scene scene)
     {
         base.Added(scene);
-        
-        SetupGraphic();
+        Setup();
+    }
+
+    void Setup()
+    {
+        Remove(Get<Sprite>());
+        piece = new Image(GFX.Game[$"CelesteChess/pieces/{pieceType + (ChessPieceColor == ChessPieceColor.White ? "" : "1")}"]);
+        piece.Origin = new Vector2(piece.Width / 2, (piece.Height / 2) + 2);
+        Add(piece);
         
         holdable = Get<Holdable>();
         holdable.PickupCollider = new Hitbox(16, 16, -8, -8);
@@ -37,34 +42,31 @@ public class ChessPieceEntity : TheoCrystal
     public override void Update()
     {
         base.Update();
-        player = Scene.Tracker.GetEntity<Player>();
-        player.carryOffset = new Vector2(0, -20);
+        player = BoardManagerEntity.Instance.GetPlayer();
+        if (player != null && player.CollideCheck(this) && player.Holding == null && BoardManagerEntity.Instance.whiteTurn == IsWhite())
+            piece.Color = pieceTint;
+        else
+            piece.Color = Color.White;
     }
-
-    void SetupGraphic()
+    
+    public void PromoteToQueen()
     {
-        crystal = Get<Sprite>();
-        Remove(crystal);
-        Visible = true;
-        
-        piece = new Image(GFX.Game[$"CelesteChess/pieces/{pieceType + (ChessPieceColor == ChessPieceColor.White ? "" : "1")}"]);
+        pieceType = Piece.Queen;
+        piece.Texture = GFX.Game[$"CelesteChess/pieces/{pieceType + (ChessPieceColor == ChessPieceColor.White ? "" : "1")}"];
         piece.Origin = new Vector2(piece.Width / 2, (piece.Height / 2) + 2);
-        Add(piece);
     }
-}
-
-public enum Piece
-{
-    Pawn,
-    Rook,
-    Knight,
-    Bishop,
-    Queen,
-    King
-}
-
-public enum ChessPieceColor
-{
-    White,
-    Black
+    
+    public bool IsWhite()
+    {
+        return ChessPieceColor == ChessPieceColor.White;
+    }
+    
+    public ChessPieceEntity Clone()
+    {
+        ChessPieceEntity clone = new(new EntityData(), Position);
+        clone.pieceType = pieceType;
+        clone.ChessPieceColor = ChessPieceColor;
+        clone.movedOnce = movedOnce;
+        return clone;
+    }
 }
