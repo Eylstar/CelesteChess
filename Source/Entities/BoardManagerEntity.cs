@@ -28,7 +28,7 @@ public class BoardManagerEntity : Entity
     public int test2 = 2;
     public int test3 = 3;
     
-    public Action onMove;
+    public Action<int, int> onMove;
 
     public BoardManagerEntity(EntityData data, Vector2 offset) : base(data.Position + offset) { }
 
@@ -165,7 +165,7 @@ public class BoardManagerEntity : Entity
         if (tile == null || piece == null || tile == piece.tile || valid == false)
             return;
         
-        onMove?.Invoke();
+        onMove?.Invoke(tile.gridPosition, piece.tile.gridPosition);
         
         if (tile.piece != null)
         {
@@ -189,7 +189,7 @@ public class BoardManagerEntity : Entity
         whiteTurn = !whiteTurn;
     }
     
-    public void MoveReceivedByNetwork(int origin, int target, int pieceType)
+    public void MoveReceivedByNetwork(int origin, int target)
     {
         ChessTileEntity originTile = GetTileByGridPosition(origin);
         ChessTileEntity targetTile = GetTileByGridPosition(target);

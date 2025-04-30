@@ -108,12 +108,11 @@ public class BoardNetData : DataType<BoardNetData>
         Logger.Log(LogLevel.Warn, "OnlineTest", $"Reading data: {data}");
         Info = data;
         string[] arr = Info.Split(',', StringSplitOptions.TrimEntries);
-        if (arr.Length == 3)
+        if (arr.Length == 2)
         {
             int.TryParse(arr[0], out OriginCoordinate);
             int.TryParse(arr[1], out TargetCoordinate);
-            int.TryParse(arr[2], out PieceType); 
-            BoardManagerEntity.Instance.MoveReceivedByNetwork(OriginCoordinate, TargetCoordinate, PieceType);
+            BoardManagerEntity.Instance.MoveReceivedByNetwork(OriginCoordinate, TargetCoordinate);
         }
         else
             Logger.Log(LogLevel.Error, "CelesteChess", $"Invalid data format: {Info}");
@@ -143,7 +142,7 @@ public class InformationComponent : CelesteNetGameComponent
         ctx = context;
     }
 
-    public void SendGameData()
+    public void SendGameData(int orig, int target)
     {
         BoardManagerEntity manager = BoardManagerEntity.Instance;
         if (manager == null)
@@ -151,7 +150,7 @@ public class InformationComponent : CelesteNetGameComponent
             Logger.Log(LogLevel.Error, "CelesteChess", "BoardManagerEntity is null");
             return;
         }
-        string dataToSend = $"{manager.test1},{manager.test2},{manager.test3}";
+        string dataToSend = $"{orig},{target}";
         Send(dataToSend);
     }
     
