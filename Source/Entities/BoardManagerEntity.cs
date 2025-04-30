@@ -158,14 +158,15 @@ public class BoardManagerEntity : Entity
         }
     }
     
-    public void ComputeMove(ChessPieceEntity piece, ChessTileEntity tile, bool valid)
+    public void ComputeMove(ChessPieceEntity piece, ChessTileEntity tile, bool valid, bool fromSource = true)
     {
         ResetValidMoves();
         
         if (tile == null || piece == null || tile == piece.tile || valid == false)
             return;
-        
-        onMove?.Invoke(tile.gridPosition, piece.tile.gridPosition);
+
+        if (fromSource)
+            onMove?.Invoke(tile.gridPosition, piece.tile.gridPosition);
         
         if (tile.piece != null)
         {
@@ -191,6 +192,7 @@ public class BoardManagerEntity : Entity
     
     public void MoveReceivedByNetwork(int origin, int target)
     {
+        Logger.Log(LogLevel.Warn, "Chess", $"Move received from network: {origin} to {target}");
         ChessTileEntity originTile = GetTileByGridPosition(origin);
         ChessTileEntity targetTile = GetTileByGridPosition(target);
         ChessPieceEntity piece = originTile.piece;
@@ -204,7 +206,7 @@ public class BoardManagerEntity : Entity
         MoveHelper.MoveSmoothlyEntity(piece, targetTile.Position + new Vector2(0, 6), 0.25f, () => { 
             holdable.Active = true;
         });
-        ComputeMove(piece, targetTile, true);
+        ComputeMove(piece, targetTile, true, false);
     }
 
     public bool CheckChecks(bool simulation)
