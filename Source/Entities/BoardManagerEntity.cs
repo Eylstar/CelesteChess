@@ -23,6 +23,10 @@ public class BoardManagerEntity : Entity
     List<ChessTileEntity> validMoves = new();
     
     public ChessTileEntity hoveredTile;
+
+    public int test1 = 1;
+    public int test2 = 2;
+    public int test3 = 3;
     
     public Action onMove;
 

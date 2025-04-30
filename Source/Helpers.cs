@@ -149,19 +149,15 @@ public class InformationComponent : CelesteNetGameComponent
         });
     }
 
-    int[] BoardDataGetter
-    {
-        get
-        {
-            if (BoardManagerEntity.Instance == null)
-                return null;
-            return ChessNetHelper.TryGetData(BoardManagerEntity.Instance, out int[] data);
-        }
-    }
-
     public void SendGameData()
     {
-        string dataToSend = $"{BoardDataGetter[0]},{BoardDataGetter[1]},{BoardDataGetter[2]}";
+        BoardManagerEntity manager = BoardManagerEntity.Instance;
+        if (manager == null)
+        {
+            Logger.Log(LogLevel.Error, "CelesteChess", "BoardManagerEntity is null");
+            return;
+        }
+        string dataToSend = $"{manager.test1},{manager.test2},{manager.test3}";
         Send(dataToSend);
     }
 
