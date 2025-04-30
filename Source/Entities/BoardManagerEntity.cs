@@ -188,6 +188,24 @@ public class BoardManagerEntity : Entity
         
         whiteTurn = !whiteTurn;
     }
+    
+    public void MoveReceivedByNetwork(int origin, int target, int pieceType)
+    {
+        ChessTileEntity originTile = GetTileByGridPosition(origin);
+        ChessTileEntity targetTile = GetTileByGridPosition(target);
+        ChessPieceEntity piece = originTile.piece;
+        
+        if (piece == null || targetTile == null)
+            return;
+        
+        Holdable holdable = piece.Get<Holdable>();
+        holdable.Active = false;
+            
+        MoveHelper.MoveSmoothlyEntity(piece, targetTile.Position + new Vector2(0, 6), 0.25f, () => { 
+            holdable.Active = true;
+        });
+        ComputeMove(piece, targetTile, true);
+    }
 
     public bool CheckChecks(bool simulation)
     {

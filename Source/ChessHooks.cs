@@ -37,8 +37,8 @@ public class ChessHooks
             
             MoveHelper.MoveSmoothlyEntity(piece, tile.Position + new Vector2(0, 6), 0.25f, () => { 
                 holdable.Active = true;
-                BoardManagerEntity.Instance.ComputeMove(piece, tile, validMove);
             });
+            BoardManagerEntity.Instance.ComputeMove(piece, tile, validMove);
             return;
         }
         orig(self, force);

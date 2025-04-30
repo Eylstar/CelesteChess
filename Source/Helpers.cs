@@ -112,7 +112,9 @@ public class BoardNetData : DataType<BoardNetData>
         {
             int.TryParse(arr[0], out OriginCoordinate);
             int.TryParse(arr[1], out TargetCoordinate);
-            int.TryParse(arr[2], out PieceType); }
+            int.TryParse(arr[2], out PieceType); 
+            BoardManagerEntity.Instance.MoveReceivedByNetwork(OriginCoordinate, TargetCoordinate, PieceType);
+        }
         else
             Logger.Log(LogLevel.Error, "CelesteChess", $"Invalid data format: {Info}");
     }
