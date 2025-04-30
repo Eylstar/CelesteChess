@@ -126,7 +126,15 @@ public class InformationComponent : CelesteNetGameComponent
 {
     static CelesteNetClientContext ctx;
     public static Dictionary<uint, int[]> Information = new();
-    
+
+    public override void Start()
+    {
+        base.Start();
+        if (Client == null)
+            return;
+        BoardManagerEntity.Instance.onMove += SendGameData;
+    }
+
     public InformationComponent(CelesteNetClientContext context, Game game) : base(context, game)
     {
         ctx = context;

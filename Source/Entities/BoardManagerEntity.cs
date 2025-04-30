@@ -23,6 +23,8 @@ public class BoardManagerEntity : Entity
     List<ChessTileEntity> validMoves = new();
     
     public ChessTileEntity hoveredTile;
+    
+    public Action onMove;
 
     public BoardManagerEntity(EntityData data, Vector2 offset) : base(data.Position + offset) { }
 
@@ -158,6 +160,8 @@ public class BoardManagerEntity : Entity
         
         if (tile == null || piece == null || tile == piece.tile || valid == false)
             return;
+        
+        onMove?.Invoke();
         
         if (tile.piece != null)
         {
