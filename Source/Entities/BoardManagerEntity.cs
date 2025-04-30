@@ -27,7 +27,7 @@ public class BoardManagerEntity : Entity
     public int test1 = 1;
     public int test2 = 2;
     public int test3 = 3;
-    
+
     public Action<int, int> onMove;
     
     public int randomNumber = 0;
@@ -45,9 +45,11 @@ public class BoardManagerEntity : Entity
                 tiles.Add(tile);
             }
         }
-        randomNumber = Calc.Random.Next(0, 1000);
+        Random random = new Random();
+        randomNumber = random.Next(0, 1000);
         Logger.Log(LogLevel.Warn, "Chess", $"CREATING A NEW INSTANCE : {randomNumber}");
         Instance = this;
+        
         AssignTriggerValues();
         SpawnChessPieces();
     }
