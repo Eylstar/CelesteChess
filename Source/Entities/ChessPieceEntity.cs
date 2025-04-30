@@ -17,7 +17,7 @@ public class ChessPieceEntity : TheoCrystal
     
     Player player;
     Image piece;
-    Color pieceTint = new(0.5f, 0.5f, 0.5f);
+    Color pieceTint = new(0.75f, 0.75f, 0.75f);
     
     public ChessPieceEntity(EntityData data, Vector2 offset) : base(data, offset) { }
 
@@ -33,7 +33,6 @@ public class ChessPieceEntity : TheoCrystal
         piece = new Image(GFX.Game[$"CelesteChess/pieces/{pieceType + (ChessPieceColor == ChessPieceColor.White ? "" : "1")}"]);
         piece.Origin = new Vector2(piece.Width / 2, (piece.Height / 2) + 2);
         Add(piece);
-        
         holdable = Get<Holdable>();
         holdable.PickupCollider = new Hitbox(16, 16, -8, -8);
         Collider = new Hitbox(16, 16, -8, -8);
@@ -44,7 +43,7 @@ public class ChessPieceEntity : TheoCrystal
         base.Update();
         player = BoardManagerEntity.Instance.GetPlayer();
         if (player != null && player.CollideCheck(this) && player.Holding == null && BoardManagerEntity.Instance.whiteTurn == IsWhite())
-            piece.Color = pieceTint;
+            piece.Color = pieceTint * 0.75f;
         else
             piece.Color = Color.White;
     }

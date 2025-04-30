@@ -104,8 +104,9 @@ public class BoardNetData : DataType<BoardNetData>
 
     protected override void Read(CelesteNetBinaryReader reader)
     {
-        Logger.Log(LogLevel.Warn, "CelesteChess", $"Reading data: {reader.ReadNetString()}");
-        Info = reader.ReadString();
+        string data = reader.ReadNetString();
+        Logger.Log(LogLevel.Warn, "OnlineTest", $"Reading data: {data}");
+        Info = data;
         string[] arr = Info.Split(',', StringSplitOptions.TrimEntries);
         if (arr.Length == 3)
         {
@@ -139,15 +140,6 @@ public class InformationComponent : CelesteNetGameComponent
     {
         ctx = context;
     }
-    
-    public void Send(string info)
-    {
-        Client?.SendAndHandle(new BoardNetData()
-        {
-            Info = info,
-            Player = Client.PlayerInfo, 
-        });
-    }
 
     public void SendGameData()
     {
@@ -159,6 +151,15 @@ public class InformationComponent : CelesteNetGameComponent
         }
         string dataToSend = $"{manager.test1},{manager.test2},{manager.test3}";
         Send(dataToSend);
+    }
+    
+    public void Send(string info)
+    {
+        Client?.SendAndHandle(new BoardNetData()
+        {
+            Info = info,
+            Player = Client.PlayerInfo, 
+        });
     }
 
     public void Handle(CelesteNetConnection con, BoardNetData data)
