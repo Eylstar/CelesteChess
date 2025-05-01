@@ -79,6 +79,7 @@ public class BoardNetData : DataType<BoardNetData>
     
     public DataPlayerInfo Player;
     public string Info;
+    public uint targetID;
 
     public int OriginCoordinate;
     public int TargetCoordinate;
@@ -86,13 +87,13 @@ public class BoardNetData : DataType<BoardNetData>
 
     public BoardNetData() { }
 
-    public override bool FilterHandle(DataContext ctx) 
-        => Player != null;
+    public override bool FilterHandle(DataContext ctx) => Player != null;
     
     public override MetaType[] GenerateMeta(DataContext ctx) => new MetaType[]
     {
         new MetaPlayerUpdate(Player),
         new MetaOrderedUpdate(Player?.ID ?? uint.MaxValue)
+        
     };
 
     public override void FixupMeta(DataContext ctx)
