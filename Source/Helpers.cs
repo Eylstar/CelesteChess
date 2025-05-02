@@ -107,14 +107,12 @@ public class BoardNetData : DataType<BoardNetData>
     protected override void Read(CelesteNetBinaryReader reader)
     {
         string data = reader.ReadNetString();
-        Logger.Log(LogLevel.Warn, "CelesteChess", $"Reading data: {data}");
         Info = data;
         string[] arr = Info.Split(',', StringSplitOptions.TrimEntries);
         if (arr.Length == 2)
         {
             int.TryParse(arr[0], out OriginCoordinate);
             int.TryParse(arr[1], out TargetCoordinate);
-            Logger.Log(LogLevel.Warn, "CelesteChess", $"I'm in read {BoardManagerEntity.Instance.randomNumber}");
             BoardManagerEntity.Instance.MoveReceivedByNetwork(OriginCoordinate, TargetCoordinate);
         }
         else
@@ -146,7 +144,6 @@ public class InformationComponent : CelesteNetGameComponent
             return;
         if (BoardManagerEntity.Instance == null)
             return;
-        Logger.Log(LogLevel.Warn, "CelesteChess", $"I'm in START NETWORK {BoardManagerEntity.Instance.randomNumber}");
         boardManager = BoardManagerEntity.Instance;
         boardManager.onMove += SendGameData;
     }
@@ -159,14 +156,12 @@ public class InformationComponent : CelesteNetGameComponent
 
         if (boardManager == null)
         {
-            Logger.Log(LogLevel.Warn, "CelesteChess", $"I'm in UPDATE NETWORK BOARD WAS NULL {BoardManagerEntity.Instance.randomNumber}");
             boardManager = BoardManagerEntity.Instance;
             boardManager.onMove += SendGameData;
         }
 
         if(BoardManagerEntity.Instance != boardManager)
         {
-            Logger.Log(LogLevel.Warn, "CelesteChess", $"I'm in UPDATE NETWORK BOARD WAS DIFFERENT {BoardManagerEntity.Instance.randomNumber}");
             boardManager.onMove -= SendGameData;
             boardManager = BoardManagerEntity.Instance;
             boardManager.onMove += SendGameData;

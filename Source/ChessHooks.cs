@@ -61,7 +61,6 @@ public class ChessHooks
             BoardManagerEntity.Instance.hoveredTile = tile;
             BoardManagerEntity boardManager = piece.Scene.Tracker.GetEntity<BoardManagerEntity>();
             if (boardManager == null) return false;
-            Logger.Log(LogLevel.Warn, "Mod", $"I start to grab and I'm in check: {(boardManager.whiteTurn ? boardManager.whiteCheck : boardManager.blackCheck)}");
             boardManager.CalculateValidMoves(tile, piece);
         }
         

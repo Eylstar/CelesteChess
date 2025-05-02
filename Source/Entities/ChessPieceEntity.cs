@@ -109,7 +109,6 @@ public class ChessPieceEntity : TheoCrystal
     {
         return new PieceState()
         {
-            piece = (Piece)reader.ReadInt32(),
             origin = reader.ReadInt32(),
             destination = reader.ReadInt32()
         };
@@ -119,14 +118,14 @@ public class ChessPieceEntity : TheoCrystal
     {
         if (stateobj is PieceState state)
         {
-            Logger.Log(LogLevel.Error, "CelesteChess", $"Applying state: {state.piece} to {state.destination}");
+            Logger.Log(LogLevel.Error, "CelesteChess", $"APPLY STATE: {state.origin} to {state.destination}");
             BoardManagerEntity.Instance.MoveReceivedByNetwork(state.origin, state.destination);
         }
     }
 
     public void WriteState(CelesteNetBinaryWriter writer)
     {
-        writer.Write((int)pieceType);
+        Logger.Log(LogLevel.Error, "CelesteChess", $"WRITING STATE: {pieceType} to {destinationToNetwork}");
         writer.Write(originToNetwork);
         writer.Write(destinationToNetwork);
     }
@@ -136,7 +135,6 @@ public class ChessPieceEntity : TheoCrystal
 
 public class PieceState
 {
-    public Piece piece;
     public int origin;
     public int destination;
 }

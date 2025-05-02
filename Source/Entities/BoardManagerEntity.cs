@@ -24,14 +24,8 @@ public class BoardManagerEntity : Entity
     List<ChessTileEntity> validMoves = new();
     
     public ChessTileEntity hoveredTile;
-
-    public int test1 = 1;
-    public int test2 = 2;
-    public int test3 = 3;
-
-    public Action<int, int> onMove;
     
-    public int randomNumber = 0;
+    public Action<int, int> onMove;
     
     public BoardManagerEntity(EntityData data, Vector2 offset) : base(data.Position + offset) { }
 
@@ -46,9 +40,6 @@ public class BoardManagerEntity : Entity
                 tiles.Add(tile);
             }
         }
-        Random random = new Random();
-        randomNumber = random.Next(0, 1000);
-        Logger.Log(LogLevel.Warn, "Chess", $"CREATING A NEW INSTANCE : {randomNumber}");
         Instance = this;
         
         AssignTriggerValues();
@@ -58,7 +49,6 @@ public class BoardManagerEntity : Entity
     public override void Removed(Scene scene)
     {
         base.Removed(scene);
-        Logger.Log(LogLevel.Warn, "Chess", $"REMOVING INSTANCE : {randomNumber}");
         Instance = null;
     }
 
@@ -182,6 +172,7 @@ public class BoardManagerEntity : Entity
             //onMove?.Invoke(piece.tile.gridPosition, tile.gridPosition);
             piece.originToNetwork = piece.tile.gridPosition;
             piece.destinationToNetwork = tile.gridPosition;
+            Logger.Log(LogLevel.Error, "Chess", $"COMPUTE MOVE: {piece.tile.gridPosition} to {tile.gridPosition} with {piece.pieceType}");
             ModInterop.PostUpdate(piece.id);
         }
         
