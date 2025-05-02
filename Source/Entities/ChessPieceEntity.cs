@@ -26,6 +26,9 @@ public class ChessPieceEntity : TheoCrystal
     Player player;
     Image piece;
     Color pieceTint = new(0.75f, 0.75f, 0.75f);
+    
+    public int originToNetwork;
+    public int destinationToNetwork;
 
     public ChessPieceEntity(EntityData data, Vector2 offset, EntityID eid) : base(data, offset)
     {
@@ -106,7 +109,8 @@ public class ChessPieceEntity : TheoCrystal
     {
         return new PieceState()
         {
-            piece = (Piece)reader.ReadByte(),
+            piece = (Piece)reader.ReadInt32(),
+            origin = reader.ReadInt32(),
             destination = reader.ReadInt32()
         };
     }
@@ -115,18 +119,16 @@ public class ChessPieceEntity : TheoCrystal
     {
         if (stateobj is PieceState state)
         {
-            if (needOnlineSync)
-            {
-                Logger.Log(LogLevel.Error, "CelesteChess", $"Applying state: {state.piece} to {state.destination}");
-                needOnlineSync = false;
-            }
+            Logger.Log(LogLevel.Error, "CelesteChess", $"Applying state: {state.piece} to {state.destination}");
+            BoardManagerEntity.Instance.MoveReceivedByNetwork(state.origin, state.destination);
         }
     }
 
     public void WriteState(CelesteNetBinaryWriter writer)
     {
         writer.Write((int)pieceType);
-        writer.Write(5);
+        writer.Write(originToNetwork);
+        writer.Write(destinationToNetwork);
     }
 
 #endregion
@@ -135,5 +137,6 @@ public class ChessPieceEntity : TheoCrystal
 public class PieceState
 {
     public Piece piece;
+    public int origin;
     public int destination;
 }

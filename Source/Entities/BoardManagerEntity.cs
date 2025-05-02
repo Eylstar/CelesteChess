@@ -179,7 +179,9 @@ public class BoardManagerEntity : Entity
 
         if (fromSource)
         {
-            onMove?.Invoke(piece.tile.gridPosition, tile.gridPosition);
+            //onMove?.Invoke(piece.tile.gridPosition, tile.gridPosition);
+            piece.originToNetwork = piece.tile.gridPosition;
+            piece.destinationToNetwork = tile.gridPosition;
             ModInterop.PostUpdate(piece.id);
         }
         
