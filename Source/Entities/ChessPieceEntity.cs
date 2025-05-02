@@ -1,12 +1,20 @@
-﻿using Celeste.Mod.Entities;
+﻿using Celeste.Mod.CelesteNet;
+using Celeste.Mod.Entities;
 using Microsoft.Xna.Framework;
 using Monocle;
+using MonoMod.ModInterop;
+using Celeste.Mod.CoopHelper.Infrastructure;
+using Celeste.Mod.CoopHelper.IO;
+using Celeste.Mod.CoopHelper;
 
 namespace Celeste.Mod.CelesteChess;
 
 [CustomEntity("CelesteChess/ChessPiece")]
 public class ChessPieceEntity : TheoCrystal
 {
+    int constructorID;
+    public EntityID id;
+    
     public ChessTileEntity tile;
     Holdable holdable;
     
@@ -18,13 +26,19 @@ public class ChessPieceEntity : TheoCrystal
     Player player;
     Image piece;
     Color pieceTint = new(0.75f, 0.75f, 0.75f);
-    
-    public ChessPieceEntity(EntityData data, Vector2 offset) : base(data, offset) { }
+
+    public ChessPieceEntity(EntityData data, Vector2 offset) : base(data, offset)
+    {
+        constructorID = data.ID;
+    }
 
     public override void Added(Scene scene)
     {
         base.Added(scene);
         Setup();
+        
+        id = new EntityID(Engine.Scene.ToString(), id.ID);
+        ModInterop.AddListener(this, id, CoopHelperHeader, false);
     }
 
     void Setup()
@@ -68,4 +82,54 @@ public class ChessPieceEntity : TheoCrystal
         clone.movedOnce = movedOnce;
         return clone;
     }
+
+    public override void Removed(Scene scene)
+    {
+        base.Removed(scene);
+        ModInterop.RemoveListener(id);
+    }
+
+    public override void SceneEnd(Scene scene)
+    {
+        base.SceneEnd(scene);
+        ModInterop.RemoveListener(id);
+    }
+
+    #region Coop Helper Integration
+
+    public static readonly int CoopHelperHeader = 7419;
+
+    internal static object Parse(CelesteNetBinaryReader reader)
+    {
+        return new PieceState()
+        {
+            piece = (Piece)reader.ReadByte(),
+            destination = reader.ReadInt32()
+        };
+    }
+    
+    public void ApplyState(object stateobj)
+    {
+        if (stateobj is PieceState state)
+        {
+            if (state.destination != tile.gridPosition)
+            {
+                //BoardManagerEntity.Instance.MoveReceivedByNetwork(tile.gridPosition, state.destination);
+            }
+        }
+    }
+
+    public void WriteState(CelesteNetBinaryWriter writer)
+    {
+        writer.Write((int)pieceType);
+        writer.Write(5);
+    }
+
+    #endregion
+}
+
+public class PieceState
+{
+    public Piece piece;
+    public int destination;
 }

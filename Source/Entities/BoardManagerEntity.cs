@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Celeste.Mod.CoopHelper.IO;
 using Celeste.Mod.Entities;
 using Microsoft.Xna.Framework;
 using Monocle;
@@ -177,7 +178,10 @@ public class BoardManagerEntity : Entity
             return;
 
         if (fromSource)
+        {
             onMove?.Invoke(piece.tile.gridPosition, tile.gridPosition);
+            ModInterop.PostUpdate(piece.id);
+        }
         
         if (tile.piece != null)
         {
