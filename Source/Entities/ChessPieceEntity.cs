@@ -12,13 +12,13 @@ namespace Celeste.Mod.CelesteChess;
 [CustomEntity("CelesteChess/ChessPiece")]
 public class ChessPieceEntity : TheoCrystal
 {
-    int constructorID;
     public EntityID id;
     
     public ChessTileEntity tile;
     Holdable holdable;
     
     public bool movedOnce = false;
+    public bool needOnlineSync = false;
     
     public Piece pieceType;
     public ChessPieceColor ChessPieceColor;
@@ -27,10 +27,12 @@ public class ChessPieceEntity : TheoCrystal
     Image piece;
     Color pieceTint = new(0.75f, 0.75f, 0.75f);
 
-    public ChessPieceEntity(EntityData data, Vector2 offset) : base(data, offset)
+    public ChessPieceEntity(EntityData data, Vector2 offset, EntityID eid) : base(data, offset)
     {
-        constructorID = data.ID;
+        id = eid;
     }
+
+    public ChessPieceEntity(EntityData data, Vector2 offset) : base(data, offset) { }
 
     public override void Added(Scene scene)
     {
@@ -95,7 +97,8 @@ public class ChessPieceEntity : TheoCrystal
         ModInterop.RemoveListener(id);
     }
 
-    #region Coop Helper Integration
+    
+#region Coop Helper Integration
 
     public static readonly int CoopHelperHeader = 7419;
 
@@ -112,9 +115,10 @@ public class ChessPieceEntity : TheoCrystal
     {
         if (stateobj is PieceState state)
         {
-            if (state.destination != tile.gridPosition)
+            if (needOnlineSync)
             {
-                //BoardManagerEntity.Instance.MoveReceivedByNetwork(tile.gridPosition, state.destination);
+                Logger.Log(LogLevel.Error, "CelesteChess", $"Applying state: {state.piece} to {state.destination}");
+                needOnlineSync = false;
             }
         }
     }
@@ -125,7 +129,7 @@ public class ChessPieceEntity : TheoCrystal
         writer.Write(5);
     }
 
-    #endregion
+#endregion
 }
 
 public class PieceState
