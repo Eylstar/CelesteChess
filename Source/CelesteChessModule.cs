@@ -27,8 +27,8 @@ public class CelesteChessModule : EverestModule {
         IL.Celeste.Player.NormalUpdate += ChessHooks.IL_DropStopping;
         On.Celeste.Player.Pickup += ChessHooks.OnPickup;
         
-        //typeof(ModInterop).ModInterop();
-        //ModInterop.RegisterSyncedType(ChessPieceEntity.CoopHelperHeader, false, false, true, ChessPieceEntity.Parse);
+        typeof(ModInterop).ModInterop();
+        ModInterop.RegisterSyncedType(ChessPieceEntity.CoopHelperHeader, false, false, true, ChessPieceEntity.Parse);
     }
 
     public override void Unload()

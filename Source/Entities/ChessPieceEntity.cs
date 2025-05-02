@@ -40,7 +40,7 @@ public class ChessPieceEntity : TheoCrystal
         
         id = new EntityID(scene.ToString(), constructorIndex);
         Logger.Log(LogLevel.Error, "CelesteChess", $"ADDED PIECE [ID={id}] {pieceType}");
-        //ModInterop.AddListener(this, id, CoopHelperHeader, false);
+        ModInterop.AddListener(this, id, CoopHelperHeader, false);
     }
 
     void Setup()
@@ -95,13 +95,13 @@ public class ChessPieceEntity : TheoCrystal
     public override void Removed(Scene scene)
     {
         base.Removed(scene);
-        //ModInterop.RemoveListener(id);
+        ModInterop.RemoveListener(id);
     }
 
     public override void SceneEnd(Scene scene)
     {
         base.SceneEnd(scene);
-        //ModInterop.RemoveListener(id);
+        ModInterop.RemoveListener(id);
     }
 
     
