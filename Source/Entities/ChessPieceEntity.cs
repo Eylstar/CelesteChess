@@ -50,6 +50,8 @@ public class ChessPieceEntity : TheoCrystal
         s.Origin = Vector2.Zero + new Vector2(s.Width / 6, (s.Height / 6) + 2);
         s.currentAnimation = null;
         s.Animating = false;
+        s.CurrentAnimationFrame = 0;
+        s.CurrentAnimationID = "";
         s.animations.Clear();
         
         //pieceSprite = new Image(GFX.Game[$"CelesteChess/pieces/{pieceType + (ChessPieceColor == ChessPieceColor.White ? "" : "1")}"]);
