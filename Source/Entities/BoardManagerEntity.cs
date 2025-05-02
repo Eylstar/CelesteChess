@@ -14,8 +14,8 @@ namespace Celeste.Mod.CelesteChess;
 public class BoardManagerEntity : Entity
 {
     public bool whiteTurn = true;
-    public bool whiteCheck = false;
-    public bool blackCheck = false;
+    public bool whiteCheck;
+    public bool blackCheck;
     
     public static BoardManagerEntity Instance;
     
@@ -128,8 +128,6 @@ public class BoardManagerEntity : Entity
         int gridPosition = (int)gridCoordinates.Y * 8 + (int)gridCoordinates.X;
         return GetTileByGridPosition(gridPosition);
     }
-    
-    
     
     public void CalculateValidMoves(ChessTileEntity tile, ChessPieceEntity piece)
     {
