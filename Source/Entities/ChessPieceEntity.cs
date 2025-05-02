@@ -12,6 +12,7 @@ namespace Celeste.Mod.CelesteChess;
 [CustomEntity("CelesteChess/ChessPiece")]
 public class ChessPieceEntity : TheoCrystal
 {
+    public int constructorIndex;
     public EntityID id;
     
     public ChessTileEntity tile;
@@ -30,19 +31,15 @@ public class ChessPieceEntity : TheoCrystal
     public int originToNetwork;
     public int destinationToNetwork;
 
-    public ChessPieceEntity(EntityData data, Vector2 offset, EntityID eid) : base(data, offset)
-    {
-        id = eid;
-    }
-
     public ChessPieceEntity(EntityData data, Vector2 offset) : base(data, offset) { }
-
+    
     public override void Added(Scene scene)
     {
         base.Added(scene);
         Setup();
         
-        id = new EntityID(Engine.Scene.ToString(), id.ID);
+        id = new EntityID(scene.ToString(), constructorIndex);
+        Logger.Log(LogLevel.Error, "CelesteChess", $"ADDED PIECE [ID={id}] {pieceType}");
         ModInterop.AddListener(this, id, CoopHelperHeader, false);
     }
 
@@ -109,8 +106,8 @@ public class ChessPieceEntity : TheoCrystal
     {
         return new PieceState()
         {
-            origin = reader.Read7BitEncodedInt(),
-            destination = reader.Read7BitEncodedInt()
+            origin = reader.ReadInt32(),
+            destination = reader.ReadInt32()
         };
     }
     
@@ -125,7 +122,7 @@ public class ChessPieceEntity : TheoCrystal
 
     public void WriteState(CelesteNetBinaryWriter writer)
     {
-        Logger.Log(LogLevel.Error, "CelesteChess", $"WRITING STATE: {pieceType} to {destinationToNetwork}");
+        Logger.Log(LogLevel.Error, "CelesteChess", $"WRITING STATE [ID={id}] {pieceType} from {originToNetwork} to {destinationToNetwork}");
         writer.Write(originToNetwork);
         writer.Write(destinationToNetwork);
     }

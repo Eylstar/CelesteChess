@@ -82,17 +82,20 @@ public class BoardManagerEntity : Entity
             piecesDataToSpawn.Add(i + 56, new PieceInfo(row[i], ChessPieceColor.White));
         }
 
+        int index = 0;
         foreach (ChessTileEntity tile in tiles)
         {
             if (piecesDataToSpawn.TryGetValue(tile.gridPosition, out PieceInfo pieceInfo))
             {
-                ChessPieceEntity chessPiece = new(new EntityData(), Vector2.Zero);
+                ChessPieceEntity chessPiece = new ChessPieceEntity(new EntityData(), tile.Position);
+                chessPiece.constructorIndex = index;
                 chessPiece.pieceType = pieceInfo.pieceType;
                 chessPiece.ChessPieceColor = pieceInfo.ChessPieceColor;
                 chessPiece.Position = tile.Position;
                 chessPiece.tile = tile;
                 tile.piece = chessPiece; 
                 Scene.Add(chessPiece);
+                index++;
             }
         }
     }
@@ -172,7 +175,7 @@ public class BoardManagerEntity : Entity
             //onMove?.Invoke(piece.tile.gridPosition, tile.gridPosition);
             piece.originToNetwork = piece.tile.gridPosition;
             piece.destinationToNetwork = tile.gridPosition;
-            Logger.Log(LogLevel.Error, "Chess", $"COMPUTE MOVE: {piece.tile.gridPosition} to {tile.gridPosition} with {piece.pieceType}");
+            Logger.Log(LogLevel.Error, "Chess", $"COMPUTE MOVE [ID={piece.id}] {piece.pieceType}: {piece.tile.gridPosition} → {tile.gridPosition}");
             ModInterop.PostUpdate(piece.id);
         }
         
