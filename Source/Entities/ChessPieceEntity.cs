@@ -25,7 +25,7 @@ public class ChessPieceEntity : TheoCrystal
     public ChessPieceColor ChessPieceColor;
     
     Player player;
-    Image piece;
+    Image pieceSprite;
     Color pieceTint = new(0.75f, 0.75f, 0.75f);
     
     public int originToNetwork;
@@ -40,15 +40,22 @@ public class ChessPieceEntity : TheoCrystal
         
         id = new EntityID(scene.ToString(), constructorIndex);
         Logger.Log(LogLevel.Error, "CelesteChess", $"ADDED PIECE [ID={id}] {pieceType}");
-        ModInterop.AddListener(this, id, CoopHelperHeader, false);
+        //ModInterop.AddListener(this, id, CoopHelperHeader, false);
     }
 
     void Setup()
     {
-        Remove(Get<Sprite>());
-        piece = new Image(GFX.Game[$"CelesteChess/pieces/{pieceType + (ChessPieceColor == ChessPieceColor.White ? "" : "1")}"]);
-        piece.Origin = new Vector2(piece.Width / 2, (piece.Height / 2) + 2);
-        Add(piece);
+        Sprite s = Get<Sprite>();
+        s.Texture = GFX.Game[$"CelesteChess/pieces/{pieceType + (ChessPieceColor == ChessPieceColor.White ? "" : "1")}"];
+        s.Origin = Vector2.Zero + new Vector2(s.Width / 6, (s.Height / 6) + 2);
+        s.currentAnimation = null;
+        s.Animating = false;
+        s.animations.Clear();
+        
+        //pieceSprite = new Image(GFX.Game[$"CelesteChess/pieces/{pieceType + (ChessPieceColor == ChessPieceColor.White ? "" : "1")}"]);
+        //pieceSprite.Origin = new Vector2(pieceSprite.Width / 2, (pieceSprite.Height / 2) + 2);
+        //Add(pieceSprite);
+        
         holdable = Get<Holdable>();
         holdable.PickupCollider = new Hitbox(16, 16, -8, -8);
         Collider = new Hitbox(16, 16, -8, -8);
@@ -58,17 +65,17 @@ public class ChessPieceEntity : TheoCrystal
     {
         base.Update();
         player = BoardManagerEntity.Instance.GetPlayer();
-        if (player != null && player.CollideCheck(this) && player.Holding == null && BoardManagerEntity.Instance.whiteTurn == IsWhite())
-            piece.Color = pieceTint * 0.75f;
+        /*if (player != null && player.CollideCheck(this) && player.Holding == null && BoardManagerEntity.Instance.whiteTurn == IsWhite())
+            pieceSprite.Color = pieceTint * 0.75f;
         else
-            piece.Color = Color.White;
+            pieceSprite.Color = Color.White;*/
     }
     
     public void PromoteToQueen()
     {
         pieceType = Piece.Queen;
-        piece.Texture = GFX.Game[$"CelesteChess/pieces/{pieceType + (ChessPieceColor == ChessPieceColor.White ? "" : "1")}"];
-        piece.Origin = new Vector2(piece.Width / 2, (piece.Height / 2) + 2);
+        pieceSprite.Texture = GFX.Game[$"CelesteChess/pieces/{pieceType + (ChessPieceColor == ChessPieceColor.White ? "" : "1")}"];
+        pieceSprite.Origin = new Vector2(pieceSprite.Width / 2, (pieceSprite.Height / 2) + 2);
     }
     
     public bool IsWhite()
@@ -88,13 +95,13 @@ public class ChessPieceEntity : TheoCrystal
     public override void Removed(Scene scene)
     {
         base.Removed(scene);
-        ModInterop.RemoveListener(id);
+        //ModInterop.RemoveListener(id);
     }
 
     public override void SceneEnd(Scene scene)
     {
         base.SceneEnd(scene);
-        ModInterop.RemoveListener(id);
+        //ModInterop.RemoveListener(id);
     }
 
     
