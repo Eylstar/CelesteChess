@@ -109,8 +109,8 @@ public class ChessPieceEntity : TheoCrystal
     {
         return new PieceState()
         {
-            origin = reader.ReadInt32(),
-            destination = reader.ReadInt32()
+            origin = reader.Read7BitEncodedInt(),
+            destination = reader.Read7BitEncodedInt()
         };
     }
     
