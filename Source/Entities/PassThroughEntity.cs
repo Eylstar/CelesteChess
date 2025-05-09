@@ -12,6 +12,7 @@ public class PassThroughEntity : JumpthruPlatform
 
     public PassThroughEntity(EntityData data, Vector2 offset) : base(data, offset)
     {
+        //High depth to call the Update method early
         Depth = 1000000;
         Visible = false;
     }
@@ -19,26 +20,19 @@ public class PassThroughEntity : JumpthruPlatform
     public override void Update()
     {
         base.Update();
-        if (TryGetPlayer(out player) && (player.Ducking || Input.Aim.Value.Y > 0.3f) && HasPlayerRider() && Input.Jump.Pressed)
+        if (ChessHelpers.TryGetPlayer(out player) && (player.Ducking || Input.Aim.Value.Y > 0.3f) && HasPlayerRider() && Input.Jump.Pressed)
         {
+            //If pressed when crouching or having a down input, makes the jump input disappear and makes the player fall through
             Input.Jump.ConsumePress();
-            player.IgnoreJumpThrus = true;
-            Add(new Coroutine(FallThru(), true));
+            Add(new Coroutine(FallThru()));
         }
     }
 
     private IEnumerator FallThru()
     {
-        if (player == null || player.Dead) yield break;
         player.IgnoreJumpThrus = true;
         player.Speed = new Vector2(0f, 60f);
         yield return 0.1f;
         player.IgnoreJumpThrus = false;
-    }
-    
-    static bool TryGetPlayer(out Player p)
-    {
-        p = Engine.Scene?.Tracker?.GetEntity<Player>();
-        return p != null;
     }
 }

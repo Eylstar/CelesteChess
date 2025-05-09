@@ -32,6 +32,9 @@
         <Reference Include="CelesteNet.Shared">
           <HintPath>..\..\CelesteNet.Client\CelesteNet.Shared.dll</HintPath>
         </Reference>
+        <Reference Include="CoopHelper">
+          <HintPath>..\..\CoopHelper\Code\CoopHelper.dll</HintPath>
+        </Reference>
     </ItemGroup>
 
     <Target Name="CopyFiles" AfterTargets="Build" Inputs="$(OutputPath)\$(AssemblyName).dll;$(OutputPath)\$(AssemblyName).pdb" Outputs="..\bin\$(AssemblyName).dll;..\bin\$(AssemblyName).pdb">

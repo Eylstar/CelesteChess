@@ -12,8 +12,14 @@ using On.Celeste.Editor;
 
 namespace Celeste.Mod.CelesteChess;
 
-public static class MoveHelper
+public static class ChessHelpers
 {
+    public static bool TryGetPlayer(out Player p)
+    {
+        p = Engine.Scene?.Tracker?.GetEntity<Player>();
+        return p != null;
+    }
+    
     public static void MoveSmoothlyEntity(Entity entity, Vector2 targetPosition, float duration)
     {
         if (entity == null) return;
@@ -43,34 +49,13 @@ public static class MoveHelper
         entity.Position = targetPosition;
         onComplete?.Invoke();
     }
-    
-    public static void MoveSmoothlyEntityHorizontal(Entity entity, float targetX, float duration)
-    {
-        if (entity == null) return;
-        entity.Add(new Coroutine(EntityMoveHorizontal(entity, targetX, duration)));
-    }
-    
-    static IEnumerator EntityMoveHorizontal(Entity entity, float targetX, float duration)
-    {
-        if (entity == null) yield break;
-        Vector2 startPosition = entity.Position;
-        float elapsedTime = 0f;
-        Vector2 targetPosition = new Vector2(targetX, entity.Position.Y);
-
-        while (elapsedTime < duration)
-        {
-            targetPosition = new Vector2(targetX, entity.Position.Y);
-            elapsedTime += Engine.DeltaTime;
-            float t = MathHelper.Clamp(elapsedTime / duration, 0f, 1f);
-            entity.Position = Vector2.Lerp(startPosition, targetPosition, t);
-            yield return null;
-        }
-
-        entity.Position = targetPosition;
-    }
 }
 
-public class BoardNetData : DataType<BoardNetData>
+
+
+// OLD MANUAL NETWORKING CODE - REPLACED BY COOPHELPER
+
+/*public class BoardNetData : DataType<BoardNetData>
 {
     static BoardNetData()
     {
@@ -107,14 +92,12 @@ public class BoardNetData : DataType<BoardNetData>
     protected override void Read(CelesteNetBinaryReader reader)
     {
         string data = reader.ReadNetString();
-        Logger.Log(LogLevel.Warn, "CelesteChess", $"Reading data: {data}");
         Info = data;
         string[] arr = Info.Split(',', StringSplitOptions.TrimEntries);
         if (arr.Length == 2)
         {
             int.TryParse(arr[0], out OriginCoordinate);
             int.TryParse(arr[1], out TargetCoordinate);
-            Logger.Log(LogLevel.Warn, "CelesteChess", $"I'm in read {BoardManagerEntity.Instance.randomNumber}");
             BoardManagerEntity.Instance.MoveReceivedByNetwork(OriginCoordinate, TargetCoordinate);
         }
         else
@@ -146,7 +129,6 @@ public class InformationComponent : CelesteNetGameComponent
             return;
         if (BoardManagerEntity.Instance == null)
             return;
-        Logger.Log(LogLevel.Warn, "CelesteChess", $"I'm in START NETWORK {BoardManagerEntity.Instance.randomNumber}");
         boardManager = BoardManagerEntity.Instance;
         boardManager.onMove += SendGameData;
     }
@@ -159,14 +141,12 @@ public class InformationComponent : CelesteNetGameComponent
 
         if (boardManager == null)
         {
-            Logger.Log(LogLevel.Warn, "CelesteChess", $"I'm in UPDATE NETWORK BOARD WAS NULL {BoardManagerEntity.Instance.randomNumber}");
             boardManager = BoardManagerEntity.Instance;
             boardManager.onMove += SendGameData;
         }
 
         if(BoardManagerEntity.Instance != boardManager)
         {
-            Logger.Log(LogLevel.Warn, "CelesteChess", $"I'm in UPDATE NETWORK BOARD WAS DIFFERENT {BoardManagerEntity.Instance.randomNumber}");
             boardManager.onMove -= SendGameData;
             boardManager = BoardManagerEntity.Instance;
             boardManager.onMove += SendGameData;
@@ -214,4 +194,4 @@ public class InformationComponent : CelesteNetGameComponent
                 data.PieceType
             };
     }
-}
+}*/
