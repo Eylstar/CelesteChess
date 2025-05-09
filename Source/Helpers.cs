@@ -12,8 +12,14 @@ using On.Celeste.Editor;
 
 namespace Celeste.Mod.CelesteChess;
 
-public static class MoveHelper
+public static class ChessHelpers
 {
+    public static bool TryGetPlayer(out Player p)
+    {
+        p = Engine.Scene?.Tracker?.GetEntity<Player>();
+        return p != null;
+    }
+    
     public static void MoveSmoothlyEntity(Entity entity, Vector2 targetPosition, float duration)
     {
         if (entity == null) return;
@@ -43,34 +49,13 @@ public static class MoveHelper
         entity.Position = targetPosition;
         onComplete?.Invoke();
     }
-    
-    public static void MoveSmoothlyEntityHorizontal(Entity entity, float targetX, float duration)
-    {
-        if (entity == null) return;
-        entity.Add(new Coroutine(EntityMoveHorizontal(entity, targetX, duration)));
-    }
-    
-    static IEnumerator EntityMoveHorizontal(Entity entity, float targetX, float duration)
-    {
-        if (entity == null) yield break;
-        Vector2 startPosition = entity.Position;
-        float elapsedTime = 0f;
-        Vector2 targetPosition = new Vector2(targetX, entity.Position.Y);
-
-        while (elapsedTime < duration)
-        {
-            targetPosition = new Vector2(targetX, entity.Position.Y);
-            elapsedTime += Engine.DeltaTime;
-            float t = MathHelper.Clamp(elapsedTime / duration, 0f, 1f);
-            entity.Position = Vector2.Lerp(startPosition, targetPosition, t);
-            yield return null;
-        }
-
-        entity.Position = targetPosition;
-    }
 }
 
-public class BoardNetData : DataType<BoardNetData>
+
+
+// OLD MANUAL NETWORKING CODE - REPLACED BY COOPHELPER
+
+/*public class BoardNetData : DataType<BoardNetData>
 {
     static BoardNetData()
     {
@@ -209,4 +194,4 @@ public class InformationComponent : CelesteNetGameComponent
                 data.PieceType
             };
     }
-}
+}*/

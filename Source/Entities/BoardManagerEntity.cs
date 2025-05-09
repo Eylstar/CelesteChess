@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using Celeste.Mod.CoopHelper.IO;
 using Celeste.Mod.Entities;
 using Microsoft.Xna.Framework;
@@ -13,19 +11,14 @@ namespace Celeste.Mod.CelesteChess;
 [CustomEntity("CelesteChess/BoardManager")]
 public class BoardManagerEntity : Entity
 {
-    public bool whiteTurn = true;
-    public bool whiteCheck;
-    public bool blackCheck;
-    
     public static BoardManagerEntity Instance;
     
     Player player;
+    public bool whiteTurn = true;
+    
     List<ChessTileEntity> tiles = new();
     List<ChessTileEntity> validMoves = new();
-    
     public ChessTileEntity hoveredTile;
-    
-    public Action<int, int> onMove;
     
     public BoardManagerEntity(EntityData data, Vector2 offset) : base(data.Position + offset) { }
 
@@ -33,6 +26,7 @@ public class BoardManagerEntity : Entity
     {
         base.Awake(scene);
         
+        //Gets all the tiles in the scene and creates an Instance of the BoardManager
         foreach (Entity entity in scene.Tracker.GetEntities<ChessTileEntity>())
         {
             if (entity is ChessTileEntity tile)
@@ -42,18 +36,13 @@ public class BoardManagerEntity : Entity
         }
         Instance = this;
         
-        AssignTriggerValues();
+        AssignTilesValue();
         SpawnChessPieces();
     }
 
-    public override void Removed(Scene scene)
+    void AssignTilesValue()
     {
-        base.Removed(scene);
-        Instance = null;
-    }
-
-    void AssignTriggerValues()
-    {
+        //Sort the tiles in the List by their position on the Scene
         tiles.Sort((a, b) =>
         {
             if (a.Position.Y == b.Position.Y)
@@ -61,7 +50,7 @@ public class BoardManagerEntity : Entity
 
             return a.Position.Y.CompareTo(b.Position.Y);
         });
-        
+        //Assign the grid position and coordinates to each tile
         for (int i = 0; i < tiles.Count; i++)
         {
             tiles[i].gridPosition = i;
@@ -69,6 +58,7 @@ public class BoardManagerEntity : Entity
         }
     }
     
+    //Spawn the chess pieces on the board
     void SpawnChessPieces()
     {
         Dictionary<int, PieceInfo> piecesDataToSpawn = new();
@@ -76,6 +66,7 @@ public class BoardManagerEntity : Entity
         
         for (int i = 0; i < 8; i++)
         {
+            //Add the pieces to the dictionary with their grid position
             piecesDataToSpawn.Add(i, new PieceInfo(row[i], ChessPieceColor.Black));
             piecesDataToSpawn.Add(i + 8, new PieceInfo(Piece.Pawn, ChessPieceColor.Black));
             piecesDataToSpawn.Add(i + 48, new PieceInfo(Piece.Pawn, ChessPieceColor.White));
@@ -87,8 +78,11 @@ public class BoardManagerEntity : Entity
         {
             if (piecesDataToSpawn.TryGetValue(tile.gridPosition, out PieceInfo pieceInfo))
             {
+                //Create a new chess piece and assign it a unique ID
                 ChessPieceEntity chessPiece = new ChessPieceEntity(new EntityData(), tile.Position);
                 chessPiece.constructorIndex = index;
+                
+                //Set the piece values and add it to the scene
                 chessPiece.pieceType = pieceInfo.pieceType;
                 chessPiece.ChessPieceColor = pieceInfo.ChessPieceColor;
                 chessPiece.Position = tile.Position;
@@ -104,17 +98,196 @@ public class BoardManagerEntity : Entity
     {
         base.Update();
         
-        player = Scene.Tracker.GetEntity<Player>();
-        if (player == null) return;
-        player.carryOffset = new Vector2(0, -20);
-
-        if (Input.DashPressed)
+        if (ChessHelpers.TryGetPlayer(out player))
         {
-            //Teleport the player to the center, tile 27
-            player.Position = tiles[27].Position + new Vector2(Math.Abs(tiles[27].Width / 2), 6);
+            player.carryOffset = new Vector2(0, -20);
+
+            //Teleport the player to the center if he presses Dash
+            if (Input.DashPressed) 
+                player.Position = tiles[27].Position + new Vector2(Math.Abs(tiles[27].Width / 2), 6);
         }
     }
     
+    
+    //Calculate the valid moves of a piece
+    public void CalculateValidMoves(ChessTileEntity tile, ChessPieceEntity piece)
+    {
+        if (piece == null || tile == null) return;
+        
+        //Get all the valid moves of the piece
+        validMoves.Clear();
+        validMoves.AddRange(ChessEngine.CalculateValidMoves(piece, tile));
+        
+        if (validMoves == null || validMoves.Count == 0)
+            return;
+        
+        //Create a list for the safe valid moves, that don't put the king in check
+        List<ChessTileEntity> safe = new();
+        foreach (ChessTileEntity vm in validMoves)
+        {
+            if (vm == null) continue;
+            
+            //For each valid move, create a temporary fake board
+            BoardManagerEntity tempBoard = CloneBoard();
+            ChessPieceEntity tempPiece = tempBoard.GetTileByGridCoordinates(piece.tile.gridCoordinates).piece;
+            ChessTileEntity tempTile = tempBoard.GetTileByGridCoordinates(vm.gridCoordinates);
+            
+            //Simulate the move and check if it puts the king in check, if not, add it to the safe list
+            if (tempBoard.SimulateMove(tempPiece, tempTile))
+                safe.Add(vm);
+            
+            tempBoard.ReleaseClone();
+        }
+        validMoves = safe;
+        
+        foreach (ChessTileEntity validMove in validMoves)
+        {
+            //Set every safe tile state and color to valid
+            if (validMove != null)
+                validMove.SetValidMove();
+        }
+    }
+    
+    //Function used to compute the move of a piece made by the player or the network
+    public void ComputeMove(ChessPieceEntity piece, ChessTileEntity moveTile, bool valid, bool sendToNetwork = true)
+    {
+        //Reset the color and state of all the tiles
+        foreach (ChessTileEntity t in tiles)
+        {
+            t.colorTarget = ColorTarget.None;
+            t.isValidForActualMove = false;
+            validMoves.Clear();
+        }
+        
+        //Return of the move is not valid
+        if (moveTile == null || piece == null || moveTile == piece.tile || valid == false) return;
+
+        //If the move is made by the player, send the move to the network
+        if (sendToNetwork)
+            SendMoveToNetwork(piece, moveTile);
+        
+        //Eat the piece if there is one on the tile
+        if (moveTile.piece != null)
+            Scene.Remove(moveTile.piece);
+        
+        //Move the piece to the tile and set the tile as the new tile of the piece
+        SwapValuesForMove(piece, moveTile);
+
+        //Promotion
+        if (piece.pieceType == Piece.Pawn && ((piece.IsWhite() && moveTile.gridCoordinates.Y == 0) || (!piece.IsWhite() && moveTile.gridCoordinates.Y == 7)))
+            piece.PromoteToQueen();
+        
+        whiteTurn = !whiteTurn;
+    }
+
+    //Called to send the move to the network, we only send the origin and destination of the move
+    public void SendMoveToNetwork(ChessPieceEntity piece, ChessTileEntity tile)
+    {
+        piece.originToNetwork = piece.tile.gridPosition;
+        piece.destinationToNetwork = tile.gridPosition;
+        ModInterop.PostUpdate(piece.id);
+    }
+    
+    //Called by the network to move the piece on the local scene, we only receive the origin and destination of the move
+    public void MoveReceivedByNetwork(int origin, int target)
+    {
+        //Determine the origin tile, the target tile and the piece based on the received positions
+        ChessTileEntity originTile = GetTileByGridPosition(origin);
+        ChessTileEntity targetTile = GetTileByGridPosition(target);
+        ChessPieceEntity piece = originTile.piece;
+        
+        if (piece == null || targetTile == null) return;
+        
+        //Like in the hook called by local moves, disable the holdable, move the piece and compute it
+        Holdable holdable = piece.Get<Holdable>();
+        holdable.Active = false;
+            
+        ChessHelpers.MoveSmoothlyEntity(piece, targetTile.Position + new Vector2(0, 6), 0.25f, () => { 
+            holdable.Active = true;
+        });
+        
+        ComputeMove(piece, targetTile, true, false);
+    }
+    
+    
+    //Function used to create a clone of the board, to check if the king will be in check
+    private BoardManagerEntity CloneBoard()
+    {
+        BoardManagerEntity clone = new(new EntityData(), Vector2.Zero);
+        
+        //Switch the turn for the clone
+        clone.whiteTurn = !whiteTurn;
+        
+        //Create new list of tiles
+        clone.tiles = new List<ChessTileEntity>();
+        foreach (ChessTileEntity tile in tiles)
+        {
+            //Copy the instance tile and add it to the new list
+            ChessTileEntity newTile = new ChessTileEntity(tile.gridCoordinates);
+            clone.tiles.Add(newTile);
+
+            if (tile.piece == null) continue;
+            
+            //Copy the instance piece and add it to the new tile
+            ChessPieceEntity newPiece = tile.piece.Clone();
+            newTile.piece = newPiece;
+            newPiece.tile = newTile;
+        }
+        return clone;
+    }
+    
+    //Function used to simulate a move on the clone board only, to check if the king will be in check, called once by valid move to test
+    public bool SimulateMove(ChessPieceEntity piece, ChessTileEntity destination)
+    {
+        SwapValuesForMove(piece, destination);
+        
+        //If the simulated move puts the king in check, return false to mark the move as not safe / valid
+        return !IsInCheck(true);
+    }
+
+    //Called by the clone, used to check if the king is in check ~uwu~
+    public bool IsInCheck(bool simulation)
+    {
+        //Create a list of every attacked tile by the pieces of the player
+        List<ChessTileEntity> attackedTiles = new();
+        foreach (ChessTileEntity tile in tiles)
+        {
+            if (tile.piece != null && tile.piece.IsWhite() == whiteTurn)
+                attackedTiles.AddRange(ChessEngine.CalculateValidMoves(tile.piece, tile, this));
+        }
+        
+        //If one of the attacked tiles has a king, return true
+        foreach (ChessTileEntity tile in attackedTiles)
+        {
+            if (tile.piece?.pieceType == Piece.King)
+                return true;
+        }
+        
+        return false;
+    }
+    
+    //Free the lists and links of the clone and reset the values to let them be deleted
+    public void ReleaseClone()
+    {
+        foreach (ChessTileEntity tile in tiles)
+        {
+            if (tile.piece != null)
+                tile.piece.tile = null;
+        }
+        tiles.Clear();
+        validMoves.Clear();
+    }
+    
+    //Swap the tile and piece values for the move
+    void SwapValuesForMove(ChessPieceEntity piece, ChessTileEntity destination)
+    {
+        piece.tile.piece = null;
+        piece.tile = destination;
+        destination.piece = piece;
+        piece.movedOnce = true;
+    }
+    
+    //API to get a tile by its grid position
     public ChessTileEntity GetTileByGridPosition(int gridPosition)
     {
         if (gridPosition < 0 || gridPosition >= tiles.Count)
@@ -123,156 +296,22 @@ public class BoardManagerEntity : Entity
         return tiles[gridPosition];
     }
     
+    //API to get a tile by its grid coordinates
     public ChessTileEntity GetTileByGridCoordinates(Vector2 gridCoordinates)
     {
         int gridPosition = (int)gridCoordinates.Y * 8 + (int)gridCoordinates.X;
         return GetTileByGridPosition(gridPosition);
     }
     
-    public void CalculateValidMoves(ChessTileEntity tile, ChessPieceEntity piece)
+    public Player GetPlayer() => player;
+    
+    public override void Removed(Scene scene)
     {
-        if (piece == null || tile == null)
-            return;
-        validMoves.Clear();
-        validMoves.AddRange(ChessEngine.CalculateValidMoves(piece, tile));
-        if (validMoves == null || validMoves.Count == 0)
-        {
-            Logger.Log(LogLevel.Warn, "Chess", "No valid moves");
-            return;
-        }
-        
-        List<ChessTileEntity> safe = new();
-        foreach (ChessTileEntity t in validMoves)
-        {
-            if (t == null) continue;
-            BoardManagerEntity temporaryBoard = CloneBoard();
-            ChessPieceEntity tempPiece = temporaryBoard.GetTileByGridCoordinates(piece.tile.gridCoordinates).piece;
-            ChessTileEntity tempTile = temporaryBoard.GetTileByGridCoordinates(t.gridCoordinates);
-            if (temporaryBoard.SimulateMove(tempPiece, tempTile))
-                safe.Add(t);
-            temporaryBoard.Free();
-        }
-        validMoves = safe;
-        
-        foreach (ChessTileEntity validMove in validMoves)
-        {
-            if (validMove != null)
-                validMove.SetValidMove();
-        }
+        base.Removed(scene);
+        if (Instance == this) Instance = null;
     }
     
-    public void ComputeMove(ChessPieceEntity piece, ChessTileEntity tile, bool valid, bool fromSource = true)
-    {
-        ResetValidMoves();
-        
-        if (tile == null || piece == null || tile == piece.tile || valid == false)
-            return;
-
-        if (fromSource)
-        {
-            //onMove?.Invoke(piece.tile.gridPosition, tile.gridPosition);
-            piece.originToNetwork = piece.tile.gridPosition;
-            piece.destinationToNetwork = tile.gridPosition;
-            Logger.Log(LogLevel.Error, "Chess", $"COMPUTE MOVE [ID={piece.id}] {piece.pieceType}: {piece.tile.gridPosition} → {tile.gridPosition}");
-            ModInterop.PostUpdate(piece.id);
-        }
-        
-        if (tile.piece != null)
-        {
-            Scene.Remove(tile.piece);
-            tile.piece = null;
-        }
-        
-        piece.tile.piece = null;
-        piece.tile = tile;
-        tile.piece = piece;
-
-        piece.movedOnce = true;
-
-        if (piece.pieceType == Piece.Pawn && (piece.IsWhite() && tile.gridCoordinates.Y == 0) || (!piece.IsWhite() && tile.gridCoordinates.Y == 7))
-        {
-            piece.PromoteToQueen();
-        }
-        
-        CheckChecks(false);
-        
-        whiteTurn = !whiteTurn;
-    }
-    
-    public void MoveReceivedByNetwork(int origin, int target)
-    {
-        Logger.Log(LogLevel.Warn, "Chess", $"Move received from network: {origin} to {target}");
-        ChessTileEntity originTile = GetTileByGridPosition(origin);
-        ChessTileEntity targetTile = GetTileByGridPosition(target);
-        ChessPieceEntity piece = originTile.piece;
-        
-        if (piece == null || targetTile == null)
-            return;
-        
-        Holdable holdable = piece.Get<Holdable>();
-        holdable.Active = false;
-            
-        MoveHelper.MoveSmoothlyEntity(piece, targetTile.Position + new Vector2(0, 6), 0.25f, () => { 
-            holdable.Active = true;
-        });
-        ComputeMove(piece, targetTile, true, false);
-    }
-
-    public bool CheckChecks(bool simulation)
-    {
-        List<ChessTileEntity> attackedTiles = new();
-        foreach (ChessTileEntity tile in tiles)
-        {
-            if (tile.piece != null && tile.piece.IsWhite() == whiteTurn)
-            {
-                attackedTiles.AddRange(ChessEngine.CalculateValidMoves(tile.piece, tile, (simulation ? this : BoardManagerEntity.Instance)));
-            }
-        }
-        
-        whiteCheck = blackCheck = false;
-        
-        foreach (ChessTileEntity tile in attackedTiles)
-        {
-            if (tile.piece != null)
-                Logger.Log(LogLevel.Warn, "Chess", "Attacked tile: " + tile.gridCoordinates + " with " + (tile.piece != null ? tile.piece.pieceType : "nothing") + " by " + (whiteTurn ? "White" : "Black"));
-            if (tile.piece?.pieceType == Piece.King)
-            {
-                if (!simulation)
-                {
-                    if (tile.piece.IsWhite())
-                        whiteCheck = true;
-                    else
-                        blackCheck = true;
-                }
-                else
-                {
-                    Logger.Log(LogLevel.Warn, "Mod", $"SIMULATION RUNNING");
-                }
-                Logger.Log(LogLevel.Warn, "Chess", "Check detected for " + (tile.piece.IsWhite() ? "White" : "Black") + " King attacked by " + tile.piece.pieceType);
-                return true;
-            }
-        }
-        return false;
-    }
-    
-    public void ResetValidMoves()
-    {
-        foreach (ChessTileEntity tile in tiles)
-        {
-            if (tile != null)
-            {
-                tile.colorTarget = ColorTarget.None;
-                tile.isValidForActualMove = false;
-                validMoves.Clear();
-            }
-        }
-    }
-    
-    public Player GetPlayer()
-    {
-        return player;
-    }
-    
+    //Struct used only when creating the clone, to store the piece type and color of the cloned piece
     struct PieceInfo
     {
         public Piece pieceType;
@@ -283,61 +322,6 @@ public class BoardManagerEntity : Entity
             this.pieceType = pieceType;
             ChessPieceColor = chessPieceColor;
         }
-    }
-
-
-    private BoardManagerEntity CloneBoard()
-    {
-        BoardManagerEntity clone = new(new EntityData(), Vector2.Zero);
-        clone.whiteTurn = !whiteTurn;
-        clone.whiteCheck = whiteCheck;
-        clone.blackCheck = blackCheck;
-        clone.tiles = new List<ChessTileEntity>();
-        foreach (ChessTileEntity tile in tiles)
-        {
-            ChessTileEntity newTile = new ChessTileEntity(tile.gridCoordinates);
-            clone.tiles.Add(newTile);
-        }
-
-        foreach (ChessTileEntity tile in tiles)
-        {
-            if (tile.piece != null)
-            {
-                ChessPieceEntity newPiece = tile.piece.Clone();
-                ChessTileEntity newTile = clone.tiles.First(t => t.gridCoordinates == tile.gridCoordinates);
-                newTile.piece = newPiece;
-                newPiece.tile = newTile;
-            }
-        }
-        return clone;
-    }
-    
-    public bool SimulateMove(ChessPieceEntity piece, ChessTileEntity destination)
-    {
-        ChessPieceEntity capturedPiece = destination.piece;
-        if (capturedPiece != null)
-            destination.piece = null;
-        
-        piece.tile.piece = null;
-        piece.tile = destination;
-        destination.piece = piece;
-        piece.movedOnce = true;
-        if (CheckChecks(true))
-        {
-            return false;
-        }
-        return true;
-    }
-    
-    public void Free()
-    {
-        foreach (ChessTileEntity tile in tiles)
-        {
-            if (tile.piece != null)
-                tile.piece.tile = null;
-        }
-        tiles.Clear();
-        validMoves.Clear();
     }
 }
 

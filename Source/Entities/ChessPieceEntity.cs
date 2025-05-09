@@ -11,21 +11,21 @@ namespace Celeste.Mod.CelesteChess;
 [CustomEntity("CelesteChess/ChessPiece")]
 public class ChessPieceEntity : TheoCrystal
 {
-    public int constructorIndex;
-    public EntityID id;
-    
-    public ChessTileEntity tile;
-    Holdable holdable;
-    
-    public bool movedOnce = false;
-    public bool needOnlineSync = false;
-    
     public Piece pieceType;
     public ChessPieceColor ChessPieceColor;
     
     Player player;
+    Holdable holdable;
+    public ChessTileEntity tile;
+    
+    public bool movedOnce = false;
+    
     Image pieceSprite;
     Color pieceTint = new(0.75f, 0.75f, 0.75f);
+    
+    //Networking variables
+    public int constructorIndex;
+    public EntityID id;
     
     public int originToNetwork;
     public int destinationToNetwork;
@@ -37,47 +37,46 @@ public class ChessPieceEntity : TheoCrystal
         base.Added(scene);
         Setup();
         
+        //Create a new ID for the entity using a set constructor index by the board manager
         id = new EntityID(scene.ToString(), constructorIndex);
-        Logger.Log(LogLevel.Error, "CelesteChess", $"ADDED PIECE [ID={id}] {pieceType}");
+        
         ModInterop.AddListener(this, id, CoopHelperHeader, false);
     }
 
     void Setup()
     {
-        /*Sprite s = Get<Sprite>();
-        s.Texture = GFX.Game[$"CelesteChess/pieces/{pieceType + (ChessPieceColor == ChessPieceColor.White ? "" : "1")}"];
-        s.Origin = Vector2.Zero + new Vector2(s.Width / 6, (s.Height / 6) + 2);
-        s.currentAnimation = null;
-        s.Animating = false;
-        s.CurrentAnimationFrame = 0;
-        s.CurrentAnimationID = "";
-        s.animations.Clear();*/
-        
         Remove(Get<Sprite>());
-        pieceSprite = new Image(GFX.Game[$"CelesteChess/pieces/{pieceType + (ChessPieceColor == ChessPieceColor.White ? "" : "1")}"]);
-        pieceSprite.Origin = new Vector2(pieceSprite.Width / 2, (pieceSprite.Height / 2) + 2);
+        AssignSprite(out pieceSprite, pieceType, ChessPieceColor);
         Add(pieceSprite);
         
+        //Adjust the collider to the piece size
         holdable = Get<Holdable>();
         holdable.PickupCollider = new Hitbox(16, 16, -8, -8);
         Collider = new Hitbox(16, 16, -8, -8);
     }
     
-    public override void Update()
+    void AssignSprite(out Image s, Piece type, ChessPieceColor color)
     {
-        base.Update();
-        player = BoardManagerEntity.Instance.GetPlayer();
-        if (player != null && player.CollideCheck(this) && player.Holding == null && BoardManagerEntity.Instance.whiteTurn == IsWhite())
-            pieceSprite.Color = pieceTint * 0.75f;
-        else
-            pieceSprite.Color = Color.White;
+        //Set the sprite based on the piece type and color
+        s = new Image(GFX.Game[$"CelesteChess/pieces/{type + (color == ChessPieceColor.White ? "" : "1")}"]);
+        s.Origin = new Vector2(pieceSprite.Width / 2, (pieceSprite.Height / 2) + 2);
     }
     
     public void PromoteToQueen()
     {
         pieceType = Piece.Queen;
-        pieceSprite.Texture = GFX.Game[$"CelesteChess/pieces/{pieceType + (ChessPieceColor == ChessPieceColor.White ? "" : "1")}"];
-        pieceSprite.Origin = new Vector2(pieceSprite.Width / 2, (pieceSprite.Height / 2) + 2);
+        AssignSprite(out pieceSprite, pieceType, ChessPieceColor);
+    }
+    
+    public override void Update()
+    {
+        base.Update();
+        
+        //Update the alpha of the piece based on the overlapping state with the player
+        if (ChessHelpers.TryGetPlayer(out player) && player.CollideCheck(this) && player.Holding == null && BoardManagerEntity.Instance.whiteTurn == IsWhite())
+            pieceSprite.Color = pieceTint * 0.75f;
+        else
+            pieceSprite.Color = Color.White;
     }
     
     public bool IsWhite()
@@ -85,6 +84,7 @@ public class ChessPieceEntity : TheoCrystal
         return ChessPieceColor == ChessPieceColor.White;
     }
     
+    //Used by the Clone board manager to create a new identical piece
     public ChessPieceEntity Clone()
     {
         ChessPieceEntity clone = new(new EntityData(), Position);
@@ -135,12 +135,12 @@ public class ChessPieceEntity : TheoCrystal
         writer.Write(originToNetwork);
         writer.Write(destinationToNetwork);
     }
+    
+    public class PieceState
+    {
+        public int origin;
+        public int destination;
+    }
 
 #endregion
-}
-
-public class PieceState
-{
-    public int origin;
-    public int destination;
 }

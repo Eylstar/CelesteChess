@@ -8,22 +8,18 @@ namespace Celeste.Mod.CelesteChess;
 [CustomEntity("CelesteChess/ChessTile")]
 public class ChessTileEntity : Entity
 {
-    public ChessPieceEntity piece = null;
-    
-    public bool isValidForActualMove = false;
-    
     public int gridPosition;
     public Vector2 gridCoordinates;
+    public ChessPieceEntity piece = null;
     
+    Image tileImage;
+    TileColor color;
     public ColorTarget colorTarget;
     
-    Image tile;
-    TileColor color;
-
-    Color isValidMove = new(225, 255, 202);
-    Color hoverBegin = new(225, 158, 3);
-    Color hoveredValid = new(193, 255, 115);
-    Color hoveredInvalid = new(213, 93, 11);
+    Color hoveredColor = new(193, 255, 115);
+    Color possibleMoveColor = new(225, 255, 202);
+    
+    public bool isValidForActualMove;
     
     public ChessTileEntity(EntityData data, Vector2 offset) : base(data.Position + offset)
     {
@@ -31,6 +27,7 @@ public class ChessTileEntity : Entity
         Depth = 1000000;
     }
     
+    //Secondary constructor for cloned BoardManagers
     public ChessTileEntity(Vector2 position)
     {
         gridCoordinates = position;
@@ -39,39 +36,30 @@ public class ChessTileEntity : Entity
     public override void Added(Scene scene)
     {
         base.Added(scene);
-        Setup();
-    }
-
-    void Setup()
-    {
-        int res = 32;
-        Collider = new Hitbox(res, res, -res / 2, -res / 2);
-        Visible = true;
-        tile = new Image(GFX.Game[$"CelesteChess/{(color == TileColor.Black ? "Black" : "White")}Tile"]);
-        tile.CenterOrigin();
-        Add(tile);
+        
+        Collider = new Hitbox(32, 32, -16, -16);
+            
+        //Add the tile image to the entity
+        tileImage = new Image(GFX.Game[$"CelesteChess/{(color == TileColor.Black ? "Black" : "White")}Tile"]);
+        tileImage.CenterOrigin();
+        Add(tileImage);
     }
     
     public override void Update()
     {
         base.Update();
 
+        //Change tile color based on the context
         switch (colorTarget)
         {
-            case ColorTarget.WalkCanGrab:
-                tile.Color = hoverBegin;
-                break;
             case ColorTarget.WalkGrabValid:
-                tile.Color = hoveredValid;
-                break;
-            case ColorTarget.WalkGrabInvalid:
-                tile.Color = hoveredInvalid;
+                tileImage.Color = hoveredColor;
                 break;
             case ColorTarget.PossibleDestination:
-                tile.Color = isValidMove;
+                tileImage.Color = possibleMoveColor;
                 break;
-            default:
-                tile.Color = Color.White;
+            case ColorTarget.None:
+                tileImage.Color = Color.White;
                 break;
         }
     }
@@ -87,10 +75,8 @@ public class ChessTileEntity : Entity
 public enum ColorTarget
 {
     None,
-    WalkCanGrab,
     WalkGrabValid,
-    WalkGrabInvalid,
-    PossibleDestination,
+    PossibleDestination
 }
 
 public enum TileColor

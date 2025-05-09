@@ -1,11 +1,4 @@
-﻿using MonoMod.ModInterop;
-using MonoMod.Utils;
-using Celeste.Mod.CoopHelper.IO;
-using Celeste.Mod.CoopHelper;
-using Celeste.Mod.CoopHelper.Infrastructure;
-using Celeste.Mod.Entities;
-
-namespace Celeste.Mod.CelesteChess;
+﻿namespace Celeste.Mod.CelesteChess;
 
 public class CelesteChessModule : EverestModule {
     public static CelesteChessModule Instance { get; private set; }
@@ -21,14 +14,23 @@ public class CelesteChessModule : EverestModule {
 
     public override void Load()
     {
+        //Prevents from dropping the piece if the player is holding grab
         On.Celeste.Player.Drop += ChessHooks.OnDrop;
+        
+        //Compute the move of a piece based on the tile it's dropped on
         On.Celeste.TheoCrystal.OnRelease += ChessHooks.OnRelease;
-        On.Celeste.Holdable.Carry += ChessHooks.OnCarry;
-        IL.Celeste.Player.NormalUpdate += ChessHooks.IL_DropStopping;
+        
+        //Calculate the valid moves of a piece when the player picks it up
         On.Celeste.Player.Pickup += ChessHooks.OnPickup;
         
-        typeof(ModInterop).ModInterop();
-        ModInterop.RegisterSyncedType(ChessPieceEntity.CoopHelperHeader, false, false, true, ChessPieceEntity.Parse);
+        //Sets the color of the tile currently overlapping with the piece
+        On.Celeste.Holdable.Carry += ChessHooks.OnCarry;
+        
+        //Black magic to prevent the player from crouching when pressing down while holding a Crystal
+        IL.Celeste.Player.NormalUpdate += ChessHooks.IL_DropStopping;
+        
+        //typeof(ModInterop).ModInterop();
+        //ModInterop.RegisterSyncedType(ChessPieceEntity.CoopHelperHeader, false, false, true, ChessPieceEntity.Parse);
     }
 
     public override void Unload()
