@@ -171,8 +171,8 @@ public class BoardManagerEntity : Entity
             
             if (rook != null && rookDestination != null)
             {
+                SendMoveToNetwork(rook, rookDestination, true);
                 MoveInducedByAction(rook.tile.gridPosition, rookDestination.gridPosition, false);
-                SendMoveToNetwork(rook, rookDestination);
             }
         }
         
@@ -203,11 +203,11 @@ public class BoardManagerEntity : Entity
     }
 
     //Called to send the move to the network, we only send the origin and destination of the move
-    public void SendMoveToNetwork(ChessPieceEntity piece, ChessTileEntity tile)
+    public void SendMoveToNetwork(ChessPieceEntity piece, ChessTileEntity tile, bool rookCastling = false)
     {
         piece.originToNetwork = piece.tile.gridPosition;
         piece.destinationToNetwork = tile.gridPosition;
-        piece.castleMove = tile.isCastleDestination;
+        piece.castleMove = rookCastling;
         ModInterop.PostUpdate(piece.id);
     }
     
