@@ -175,14 +175,17 @@ public class BoardManagerEntity : Entity
                 MoveInducedByAction(rook.tile.gridPosition, rookDestination.gridPosition, false);
             }
         }
+
+        if (moveTile.isDoubleMoveDestination)
+            piece.pawnJustMovedTwice = true;
+        
         
         //If the move is made by the player, send the move to the network
         if (sendToNetwork)
             SendMoveToNetwork(piece, moveTile);
         
-        //Eat the piece if there is one on the tile
-        if (moveTile.piece != null)
-            Scene.Remove(moveTile.piece);
+        Scene.Remove(moveTile.enPassantCapturePiece ?? moveTile.piece);
+            
         
         //Move the piece to the tile and set the tile as the new tile of the piece
         SwapValuesForMove(piece, moveTile);
@@ -199,6 +202,8 @@ public class BoardManagerEntity : Entity
             tile.isCastleDestination = false;
             tile.castlePiece = null;
             tile.rookDestinationTile = null;
+            tile.isDoubleMoveDestination = false;
+            tile.enPassantCapturePiece = null;
         }
     }
 

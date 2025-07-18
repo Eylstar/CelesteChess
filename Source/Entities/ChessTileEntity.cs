@@ -21,9 +21,13 @@ public class ChessTileEntity : Entity
     
     public bool isValidForActualMove;
     
+    public bool isDoubleMoveDestination = false;
+    public ChessPieceEntity enPassantCapturePiece = null;
+    
     public bool isCastleDestination = false;
     public ChessPieceEntity castlePiece = null;
     public ChessTileEntity rookDestinationTile = null;
+    
     
     public ChessTileEntity(EntityData data, Vector2 offset) : base(data.Position + offset)
     {

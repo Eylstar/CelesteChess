@@ -31,6 +31,8 @@ public class ChessPieceEntity : TheoCrystal
     public int originToNetwork;
     public int destinationToNetwork;
     public bool castleMove = false;
+    
+    public bool pawnJustMovedTwice = false;
 
     public ChessPieceEntity(EntityData data, Vector2 offset) : base(data, offset) { }
     

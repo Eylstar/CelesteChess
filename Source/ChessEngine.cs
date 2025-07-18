@@ -181,7 +181,6 @@ public class ChessEngine
             
             ChessPieceEntity simulatedKing = clone.GetTileByGridCoordinates(king.tile.gridCoordinates).piece;
             ChessTileEntity destination = clone.GetTileByGridCoordinates(position);
-
             
             bool safe = clone.SimulateMove(simulatedKing, destination);
             clone.ReleaseClone();
@@ -197,6 +196,32 @@ public class ChessEngine
         List<ChessTileEntity> validMoves = new();
         Vector2 position = tile.gridCoordinates;
         bool hasPieceInFront = false;
+        
+        
+        //En Passant
+        Vector2 leftPawn = position + new Vector2(-1, 0);
+        Vector2 rightPawn = position + new Vector2(1, 0);
+
+        if (IsInsideBoard(leftPawn) && board.GetTileByGridCoordinates(leftPawn).piece.pawnJustMovedTwice)
+        {
+            Vector2 destination = position + new Vector2(-1, piece.IsWhite() ? -1 : 1);
+            if (TryToAddTileToList(destination, piece, validMoves, board))
+            {
+                ChessTileEntity tileToAdd = board.GetTileByGridCoordinates(destination);
+                tileToAdd.enPassantCapturePiece = board.GetTileByGridCoordinates(leftPawn).piece;
+            }
+        }
+
+        if (IsInsideBoard(rightPawn) && board.GetTileByGridCoordinates(rightPawn).piece.pawnJustMovedTwice)
+        {
+            Vector2 destination = position + new Vector2(1, piece.IsWhite() ? -1 : 1);
+            if (TryToAddTileToList(destination, piece, validMoves, board))
+            {
+                ChessTileEntity tileToAdd = board.GetTileByGridCoordinates(destination);
+                tileToAdd.enPassantCapturePiece = board.GetTileByGridCoordinates(rightPawn).piece;
+            }
+        }
+
         
         //Move Forward once
         position.Y += piece.IsWhite() ? -1 : 1;
@@ -227,7 +252,6 @@ public class ChessEngine
             }
         }
         
-        //En Passant
         
         
         //Move Forward twice
@@ -238,7 +262,10 @@ public class ChessEngine
         {
             ChessPieceEntity otherPiece = board.GetTileByGridCoordinates(position).piece;
             if (otherPiece == null)
-                TryToAddTileToList(position, piece, validMoves, board);
+            {
+                if(TryToAddTileToList(position, piece, validMoves, board))
+                    board.GetTileByGridCoordinates(position).isDoubleMoveDestination = true;
+            }
         }
         
         return validMoves;
