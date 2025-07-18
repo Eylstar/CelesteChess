@@ -13,6 +13,8 @@ public class BoardManagerEntity : Entity
 {
     public static BoardManagerEntity Instance;
     
+    ChessPieceEntity lastMovedPiece = null;
+    
     Player player;
     public bool whiteTurn = true;
     
@@ -196,7 +198,10 @@ public class BoardManagerEntity : Entity
             piece.PromoteToQueen();
 
         if (switchTurns)
+        {
             whiteTurn = !whiteTurn;
+            lastMovedPiece = piece;
+        }
 
         foreach (ChessTileEntity tile in tiles)
         {
@@ -219,7 +224,7 @@ public class BoardManagerEntity : Entity
     }
     
     //Called by the network (or castling) to move the piece on the local scene, we only receive the origin and destination of the move
-    public void MoveInducedByAction(int origin, int target,  bool switchActions = true, bool pawnJustMovedTwice = false)
+    public void MoveInducedByAction(int origin, int target, bool switchActions = true, bool pawnJustMovedTwice = false, bool ateWtihEnPassant = false)
     {
         //Determine the origin tile, the target tile and the piece based on the received positions
         ChessTileEntity originTile = GetTileByGridPosition(origin);
@@ -237,6 +242,9 @@ public class BoardManagerEntity : Entity
         ChessHelpers.MoveSmoothlyEntity(piece, targetTile.Position + new Vector2(0, 6), 0.25f, () => { 
             holdable.Active = true;
         });
+
+        if (ateWtihEnPassant)
+            Scene.Remove(lastMovedPiece);
         
         ComputeMove(piece, targetTile, true, false, switchActions);
     }

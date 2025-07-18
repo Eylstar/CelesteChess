@@ -32,6 +32,7 @@ public class ChessPieceEntity : TheoCrystal
     public int destinationToNetwork;
     public bool castleMove = false;
     public bool pawnJustMovedTwice = false;
+    public bool AteWithEnPassant = false;
 
     public ChessPieceEntity(EntityData data, Vector2 offset) : base(data, offset) { }
     
@@ -123,7 +124,8 @@ public class ChessPieceEntity : TheoCrystal
             origin = reader.ReadInt32(),
             destination = reader.ReadInt32(),
             castleMove = reader.ReadBoolean(),
-            pawnJustMovedTwice = reader.ReadBoolean()
+            pawnJustMovedTwice = reader.ReadBoolean(),
+            AteWithEnPassant = reader.ReadBoolean()
         };
     }
     
@@ -132,7 +134,7 @@ public class ChessPieceEntity : TheoCrystal
         if (stateobj is PieceState state)
         {
             //Logger.Log(LogLevel.Error, "CelesteChess", $"APPLY STATE: {state.origin} to {state.destination}");
-            BoardManagerEntity.Instance.MoveInducedByAction(state.origin, state.destination, !state.castleMove, state.pawnJustMovedTwice);
+            BoardManagerEntity.Instance.MoveInducedByAction(state.origin, state.destination, !state.castleMove, state.pawnJustMovedTwice, state.AteWithEnPassant);
         }
     }
 
@@ -143,6 +145,7 @@ public class ChessPieceEntity : TheoCrystal
         writer.Write(destinationToNetwork);
         writer.Write(castleMove);
         writer.Write(pawnJustMovedTwice);
+        writer.Write(AteWithEnPassant);
     }
     
     public class PieceState
@@ -151,6 +154,7 @@ public class ChessPieceEntity : TheoCrystal
         public int destination;
         public bool castleMove;
         public bool pawnJustMovedTwice;
+        public bool AteWithEnPassant;
     }
 
 #endregion
