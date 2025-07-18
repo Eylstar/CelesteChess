@@ -214,7 +214,7 @@ public class ChessEngine
                 tileToAdd.enPassantCapturePiece = board.GetTileByGridCoordinates(leftPawn).piece;
             }
         }
-
+        
         if (IsInsideBoard(rightPawn) && rightPawnPiece != null && rightPawnPiece.pawnJustMovedTwice)
         {
             Vector2 destination = position + new Vector2(1, piece.IsWhite() ? -1 : 1);
@@ -255,8 +255,6 @@ public class ChessEngine
             }
         }
         
-        
-        
         //Move Forward twice
         if (piece.movedOnce || hasPieceInFront) return validMoves;
         position.Y += piece.IsWhite() ? -1 : 1;
@@ -273,7 +271,6 @@ public class ChessEngine
         
         return validMoves;
     }
-
     
     
     //Check if the position is inside the board to avoid out of bounds exceptions

@@ -131,14 +131,14 @@ public class ChessPieceEntity : TheoCrystal
     {
         if (stateobj is PieceState state)
         {
-            Logger.Log(LogLevel.Error, "CelesteChess", $"APPLY STATE: {state.origin} to {state.destination}");
+            //Logger.Log(LogLevel.Error, "CelesteChess", $"APPLY STATE: {state.origin} to {state.destination}");
             BoardManagerEntity.Instance.MoveInducedByAction(state.origin, state.destination, !state.castleMove, state.pawnJustMovedTwice);
         }
     }
 
     public void WriteState(CelesteNetBinaryWriter writer)
     {
-        Logger.Log(LogLevel.Error, "CelesteChess", $"WRITING STATE [ID={id}] {pieceType} from {originToNetwork} to {destinationToNetwork}");
+        //Logger.Log(LogLevel.Error, "CelesteChess", $"WRITING STATE [ID={id}] {pieceType} from {originToNetwork} to {destinationToNetwork}");
         writer.Write(originToNetwork);
         writer.Write(destinationToNetwork);
         writer.Write(castleMove);

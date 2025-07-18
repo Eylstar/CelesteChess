@@ -179,11 +179,9 @@ public class BoardManagerEntity : Entity
         //If the move is made by the player, send the move to the network
         if (sendToNetwork)
         {
-            SendMoveToNetwork(piece, moveTile);
             foreach (ChessTileEntity t in tiles)
-            {
                 if (t.piece != null) t.piece.pawnJustMovedTwice = false;
-            }
+            SendMoveToNetwork(piece, moveTile);
         }
         
         //Eating
