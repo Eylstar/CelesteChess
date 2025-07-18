@@ -157,7 +157,6 @@ public class BoardManagerEntity : Entity
             t.colorTarget = ColorTarget.None;
             t.isValidForActualMove = false;
             validMoves.Clear();
-            if (t.piece != null) t.piece.pawnJustMovedTwice = false;
         }
         
         //Return of the move is not valid
@@ -176,14 +175,16 @@ public class BoardManagerEntity : Entity
                 MoveInducedByAction(rook.tile.gridPosition, rookDestination.gridPosition, false);
             }
         }
-
-        if (moveTile.isDoubleMoveDestination)
-            piece.pawnJustMovedTwice = true;
-        
         
         //If the move is made by the player, send the move to the network
         if (sendToNetwork)
+        {
             SendMoveToNetwork(piece, moveTile);
+            foreach (ChessTileEntity t in tiles)
+            {
+                if (t.piece != null) t.piece.pawnJustMovedTwice = false;
+            }
+        }
         
         //Eating
         Scene.Remove(moveTile.enPassantCapturePiece ?? moveTile.piece);
@@ -215,11 +216,12 @@ public class BoardManagerEntity : Entity
         piece.originToNetwork = piece.tile.gridPosition;
         piece.destinationToNetwork = tile.gridPosition;
         piece.castleMove = rookCastling;
+        piece.pawnJustMovedTwice = tile.isDoubleMoveDestination;
         ModInterop.PostUpdate(piece.id);
     }
     
     //Called by the network (or castling) to move the piece on the local scene, we only receive the origin and destination of the move
-    public void MoveInducedByAction(int origin, int target,  bool switchActions = true)
+    public void MoveInducedByAction(int origin, int target,  bool switchActions = true, bool pawnJustMovedTwice = false)
     {
         //Determine the origin tile, the target tile and the piece based on the received positions
         ChessTileEntity originTile = GetTileByGridPosition(origin);
@@ -227,6 +229,8 @@ public class BoardManagerEntity : Entity
         ChessPieceEntity piece = originTile.piece;
         
         if (piece == null || targetTile == null) return;
+        
+        piece.pawnJustMovedTwice = pawnJustMovedTwice;
         
         //Like in the hook called by local moves, disable the holdable, move the piece and compute it 
         Holdable holdable = piece.Get<Holdable>();

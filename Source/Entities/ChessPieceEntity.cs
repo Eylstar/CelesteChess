@@ -31,7 +31,6 @@ public class ChessPieceEntity : TheoCrystal
     public int originToNetwork;
     public int destinationToNetwork;
     public bool castleMove = false;
-    
     public bool pawnJustMovedTwice = false;
 
     public ChessPieceEntity(EntityData data, Vector2 offset) : base(data, offset) { }
@@ -114,8 +113,8 @@ public class ChessPieceEntity : TheoCrystal
 #region Coop Helper Integration
 
     //TODO CHANGER LE RANDOM ICI C'EST POUR DU DEBUG !!!!!!!!!!!!
-    //public static readonly int CoopHelperHeader = 21120208;
-    public static readonly int CoopHelperHeader = (int)Random.Shared.NextInt64(180000, 185000);
+    public static readonly int CoopHelperHeader = 21120208;
+    //public static readonly int CoopHelperHeader = (int)Random.Shared.NextInt64(180000, 185000);
 
     internal static object Parse(CelesteNetBinaryReader reader)
     {
@@ -123,7 +122,8 @@ public class ChessPieceEntity : TheoCrystal
         {
             origin = reader.ReadInt32(),
             destination = reader.ReadInt32(),
-            castleMove = reader.ReadBoolean()
+            castleMove = reader.ReadBoolean(),
+            pawnJustMovedTwice = reader.ReadBoolean()
         };
     }
     
@@ -132,7 +132,7 @@ public class ChessPieceEntity : TheoCrystal
         if (stateobj is PieceState state)
         {
             Logger.Log(LogLevel.Error, "CelesteChess", $"APPLY STATE: {state.origin} to {state.destination}");
-            BoardManagerEntity.Instance.MoveInducedByAction(state.origin, state.destination, !state.castleMove);
+            BoardManagerEntity.Instance.MoveInducedByAction(state.origin, state.destination, !state.castleMove, pawnJustMovedTwice);
         }
     }
 
@@ -142,6 +142,7 @@ public class ChessPieceEntity : TheoCrystal
         writer.Write(originToNetwork);
         writer.Write(destinationToNetwork);
         writer.Write(castleMove);
+        writer.Write(pawnJustMovedTwice);
     }
     
     public class PieceState
@@ -149,6 +150,7 @@ public class ChessPieceEntity : TheoCrystal
         public int origin;
         public int destination;
         public bool castleMove;
+        public bool pawnJustMovedTwice;
     }
 
 #endregion
