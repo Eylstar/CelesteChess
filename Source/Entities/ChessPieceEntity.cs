@@ -132,7 +132,7 @@ public class ChessPieceEntity : TheoCrystal
         if (stateobj is PieceState state)
         {
             Logger.Log(LogLevel.Error, "CelesteChess", $"APPLY STATE: {state.origin} to {state.destination}");
-            BoardManagerEntity.Instance.MoveInducedByAction(state.origin, state.destination, !state.castleMove, pawnJustMovedTwice);
+            BoardManagerEntity.Instance.MoveInducedByAction(state.origin, state.destination, !state.castleMove, state.pawnJustMovedTwice);
         }
     }
 
