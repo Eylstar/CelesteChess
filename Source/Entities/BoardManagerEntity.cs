@@ -42,9 +42,9 @@ public class BoardManagerEntity : Entity
         AssignTilesValue();
         SpawnChessPieces();
         
-        ghostPiece = new GhostPieceEntity();
+        ghostPiece = new GhostPieceEntity(new EntityData(), new Vector2(50, 50));
         Scene.Add(ghostPiece);
-        ghostPiece.enabled = false;
+        ghostPiece.enabled = true;
     }
 
     void AssignTilesValue()

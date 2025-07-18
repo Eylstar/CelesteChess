@@ -9,8 +9,12 @@ using Celeste.Mod.CoopHelper;
 
 namespace Celeste.Mod.CelesteChess;
 
+[Tracked]
+[CustomEntity("CelesteChess/GhostPiece")]
 public class GhostPieceEntity : Entity
 {
+    public GhostPieceEntity(EntityData data, Vector2 offset) : base(data.Position + offset) { }
+    
     public EntityID id;
     
     public bool enabled = false;
@@ -35,6 +39,8 @@ public class GhostPieceEntity : Entity
         pieceSprite = new Image(GFX.Game[$"CelesteChess/pieces/Pawn"]);
         pieceSprite.Origin = new Vector2(pieceSprite.Width / 2, (pieceSprite.Height / 2) + 2);
         pieceSprite.Color = pieceTint;
+        
+        Add(pieceSprite);
     }
 
     public override void Update()
@@ -74,7 +80,7 @@ public class GhostPieceEntity : Entity
     {
         if (stateobj is GhostState state)
         {
-            Logger.Log(LogLevel.Debug, "CelesteChess", $"Ghost piece state received: {state.pieceType}, {state.isWhite}, {state.xPosition}, {state.yPosition}");
+            Logger.Log(LogLevel.Error, "CelesteChess", $"Ghost piece state received: {state.pieceType}, {state.isWhite}, {state.xPosition}, {state.yPosition}");
             BoardManagerEntity.Instance.ghostPiece.SetPosition(xPosition = state.xPosition, yPosition = state.yPosition, isWhite = state.isWhite, pieceType = state.pieceType);
         }
     }

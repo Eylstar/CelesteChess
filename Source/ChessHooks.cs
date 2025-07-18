@@ -93,7 +93,7 @@ public class ChessHooks
                 ghostPiece.pieceType = (int)piece.pieceType;
                 ghostPiece.isWhite = piece.IsWhite();
             }
-            Logger.Log("CelesteChess", $"Calling PostUpdate for ghost piece with ID: {BoardManagerEntity.Instance.ghostPiece.id}");
+            Logger.Log(LogLevel.Error, "CelesteChess", $"Calling PostUpdate for ghost piece with ID: {BoardManagerEntity.Instance.ghostPiece.id}");
             ModInterop.PostUpdate(BoardManagerEntity.Instance.ghostPiece.id);
         }
         orig(self, pos);
