@@ -125,7 +125,7 @@ public class ChessPieceEntity : TheoCrystal
             destination = reader.ReadInt32(),
             castleMove = reader.ReadBoolean(),
             pawnJustMovedTwice = reader.ReadBoolean(),
-            AteWithEnPassant = reader.ReadBoolean()
+            AteWithEnPassant = reader.ReadBoolean(),
         };
     }
     

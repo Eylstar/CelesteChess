@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Celeste.Mod.CoopHelper.IO;
 using Celeste.Mod.Helpers;
 using Microsoft.Xna.Framework;
 using Monocle;
@@ -37,6 +38,8 @@ public class ChessHooks
         {
             //Force the drop force being 0
             orig(self, new Vector2(0, 0));
+            
+            BoardManagerEntity.Instance.ghostPiece.enabled = false;
 
             bool validMove = true;
             ChessTileEntity tile = TileOverlapDetection(piece);
@@ -80,6 +83,17 @@ public class ChessHooks
             
                 BoardManagerEntity.Instance.hoveredTile = tile;
             }
+            
+            GhostPieceEntity ghostPiece = BoardManagerEntity.Instance.ghostPiece;
+            if (ghostPiece != null)
+            {
+                ghostPiece.enabled = true;
+                ghostPiece.xPosition = pos.X;
+                ghostPiece.yPosition = pos.Y;
+                ghostPiece.pieceType = (int)piece.pieceType;
+                ghostPiece.isWhite = piece.IsWhite();
+            }
+            ModInterop.PostUpdate(BoardManagerEntity.Instance.ghostPiece.id);
         }
         orig(self, pos);
     }

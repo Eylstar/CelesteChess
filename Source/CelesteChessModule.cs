@@ -34,6 +34,7 @@ public class CelesteChessModule : EverestModule {
         
         typeof(ModInterop).ModInterop();
         ModInterop.RegisterSyncedType(ChessPieceEntity.CoopHelperHeader, false, false, true, ChessPieceEntity.Parse);
+        ModInterop.RegisterSyncedType(GhostPieceEntity.CoopHelperHeader, false, false, true, GhostPieceEntity.Parse);
     }
 
     public override void Unload()

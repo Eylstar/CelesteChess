@@ -12,6 +12,7 @@ namespace Celeste.Mod.CelesteChess;
 public class BoardManagerEntity : Entity
 {
     public static BoardManagerEntity Instance;
+    public GhostPieceEntity ghostPiece;
     
     ChessPieceEntity lastMovedPiece = null;
     
@@ -40,6 +41,10 @@ public class BoardManagerEntity : Entity
         
         AssignTilesValue();
         SpawnChessPieces();
+        
+        ghostPiece = new GhostPieceEntity();
+        Scene.Add(ghostPiece);
+        ghostPiece.enabled = false;
     }
 
     void AssignTilesValue()
@@ -220,6 +225,8 @@ public class BoardManagerEntity : Entity
         piece.destinationToNetwork = tile.gridPosition;
         piece.castleMove = rookCastling;
         piece.pawnJustMovedTwice = tile.isDoubleMoveDestination;
+        piece.AteWithEnPassant = tile.enPassantCapturePiece != null;
+        
         ModInterop.PostUpdate(piece.id);
     }
     
