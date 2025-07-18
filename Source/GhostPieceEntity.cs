@@ -37,11 +37,9 @@ public class GhostPieceEntity : Entity
         pieceSprite.Color = pieceTint;
     }
 
-    public override void Render()
+    public override void Update()
     {
-        if (!enabled)
-            return;
-        base.Render();
+        pieceSprite.Visible = enabled;
     }
 
     public void SetPosition(float xpos, float ypos, bool white, int type)
@@ -76,6 +74,7 @@ public class GhostPieceEntity : Entity
     {
         if (stateobj is GhostState state)
         {
+            Logger.Log(LogLevel.Debug, "CelesteChess", $"Ghost piece state received: {state.pieceType}, {state.isWhite}, {state.xPosition}, {state.yPosition}");
             BoardManagerEntity.Instance.ghostPiece.SetPosition(xPosition = state.xPosition, yPosition = state.yPosition, isWhite = state.isWhite, pieceType = state.pieceType);
         }
     }
