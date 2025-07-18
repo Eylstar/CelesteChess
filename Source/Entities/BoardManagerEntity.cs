@@ -157,6 +157,7 @@ public class BoardManagerEntity : Entity
             t.colorTarget = ColorTarget.None;
             t.isValidForActualMove = false;
             validMoves.Clear();
+            if (t.piece != null) t.piece.pawnJustMovedTwice = false;
         }
         
         //Return of the move is not valid
@@ -184,6 +185,7 @@ public class BoardManagerEntity : Entity
         if (sendToNetwork)
             SendMoveToNetwork(piece, moveTile);
         
+        //Eating
         Scene.Remove(moveTile.enPassantCapturePiece ?? moveTile.piece);
             
         

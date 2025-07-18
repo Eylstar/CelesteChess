@@ -201,8 +201,11 @@ public class ChessEngine
         //En Passant
         Vector2 leftPawn = position + new Vector2(-1, 0);
         Vector2 rightPawn = position + new Vector2(1, 0);
+        
+        ChessPieceEntity leftPawnPiece = board.GetTileByGridCoordinates(leftPawn).piece;
+        ChessPieceEntity rightPawnPiece = board.GetTileByGridCoordinates(rightPawn).piece;
 
-        if (IsInsideBoard(leftPawn) && board.GetTileByGridCoordinates(leftPawn).piece.pawnJustMovedTwice)
+        if (IsInsideBoard(leftPawn) && leftPawnPiece != null && leftPawnPiece.pawnJustMovedTwice)
         {
             Vector2 destination = position + new Vector2(-1, piece.IsWhite() ? -1 : 1);
             if (TryToAddTileToList(destination, piece, validMoves, board))
@@ -212,7 +215,7 @@ public class ChessEngine
             }
         }
 
-        if (IsInsideBoard(rightPawn) && board.GetTileByGridCoordinates(rightPawn).piece.pawnJustMovedTwice)
+        if (IsInsideBoard(rightPawn) && rightPawnPiece != null && rightPawnPiece.pawnJustMovedTwice)
         {
             Vector2 destination = position + new Vector2(1, piece.IsWhite() ? -1 : 1);
             if (TryToAddTileToList(destination, piece, validMoves, board))
