@@ -54,7 +54,9 @@ public class GhostPieceEntity : Entity
         {
             // Set the position of the ghost piece based on the current piece type and color
             Position = new Vector2(xPosition, yPosition);
-            pieceSprite = new Image(GFX.Game[$"CelesteChess/pieces/{(Piece)type + (white ? "" : "1")}"]);
+            Piece piece = (Piece)type;
+            Logger.Log(LogLevel.Error, "CelesteChess", $"Setting ghost piece position to: {xPosition}, {yPosition} with type: {piece} and color: {(white ? "White" : "Black")}");
+            pieceSprite = new Image(GFX.Game[$"CelesteChess/pieces/{piece + (white ? "" : "1")}"]);
         }
     }
 
@@ -80,7 +82,6 @@ public class GhostPieceEntity : Entity
     {
         if (stateobj is GhostState state)
         {
-            Logger.Log(LogLevel.Error, "CelesteChess", $"Ghost piece state received: {state.pieceType}, {state.isWhite}, {state.xPosition}, {state.yPosition}");
             BoardManagerEntity.Instance.ghostPiece.SetPosition(xPosition = state.xPosition, yPosition = state.yPosition, isWhite = state.isWhite, pieceType = state.pieceType);
         }
     }
