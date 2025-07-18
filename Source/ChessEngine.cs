@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 
 namespace Celeste.Mod.CelesteChess;
@@ -27,6 +28,12 @@ public class ChessEngine
         new(1, -2),
         new(-1, 2),
         new(-1, -2)
+    };
+    
+    static readonly Vector2[] castle =
+    {
+        new(1, 0),
+        new(2, 0)
     };
     
     //Main function to calculate the valid moves of any piece
@@ -109,8 +116,79 @@ public class ChessEngine
         }
         
         //Check for castling
+        if (!piece.movedOnce)
+        {
+            Vector2 leftRookPosition = new Vector2(0, piece.IsWhite() ? 7 : 0);
+            Vector2 rightRookPosition = new Vector2(7, piece.IsWhite() ? 7 : 0);
+            
+            TryAddCastleMovement(piece, tile, board, validMoves, leftRookPosition, true);
+            TryAddCastleMovement(piece, tile, board, validMoves, rightRookPosition, false);
+        }
 
         return validMoves;
+    }
+
+    static void TryAddCastleMovement(ChessPieceEntity piece, ChessTileEntity tile, BoardManagerEntity board, List<ChessTileEntity> validMoves, Vector2 rookPosition, bool isLeft)
+    {
+        ChessPieceEntity rook = board.GetTileByGridCoordinates(rookPosition).piece;
+        if (rook != null && !rook.movedOnce)
+        {
+            int direction = isLeft ? -1 : 1;
+            
+            Vector2[] movesToCheck = 
+            {
+                tile.gridCoordinates,
+                tile.gridCoordinates + castle[0] * direction,
+                tile.gridCoordinates + castle[1] * direction
+            };
+            
+            if (IsHorizontalPathClear(piece.tile, rook.tile, board) && IsCastlePathSafe(piece, movesToCheck, board))
+            {
+                Vector2 kingTarget = tile.gridCoordinates + new Vector2(2 * direction, 0);
+                ChessTileEntity kingDestination = board.GetTileByGridCoordinates(kingTarget);
+                if (IsInsideBoard(kingTarget) && TryToAddTileToList(kingTarget, piece, validMoves, board))
+                {
+                    kingDestination.isCastleDestination = true;
+                    kingDestination.castlePiece = rook;
+                    Vector2 rookTarget = new Vector2(isLeft ? 3 : 5, piece.IsWhite() ? 7 : 0);
+                    kingDestination.rookDestinationTile = board.GetTileByGridCoordinates(rookTarget);
+                }
+            }
+        }
+    }
+    
+    public static bool IsHorizontalPathClear(ChessTileEntity orig, ChessTileEntity dest, BoardManagerEntity board)
+    {
+        if (orig.gridCoordinates.Y != dest.gridCoordinates.Y) return false;
+
+        int startX = (int)Math.Min(orig.gridCoordinates.X, dest.gridCoordinates.X);
+        int endX = (int)Math.Max(orig.gridCoordinates.X, dest.gridCoordinates.X);
+
+        for (int x = startX + 1; x < endX; x++)
+        {
+            if (board.GetTileByGridCoordinates(new Vector2(x, orig.gridCoordinates.Y)).piece != null)
+                return false;
+        }
+        
+        return true;
+    }
+    
+    public static bool IsCastlePathSafe(ChessPieceEntity king, Vector2[] positionsToCheck, BoardManagerEntity board)
+    {
+        foreach (Vector2 position in positionsToCheck)
+        {
+            BoardManagerEntity clone = board.CloneBoard();
+            
+            ChessPieceEntity simulatedKing = clone.GetTileByGridCoordinates(king.tile.gridCoordinates).piece;
+            ChessTileEntity destination = clone.GetTileByGridCoordinates(position);
+
+            
+            bool safe = clone.SimulateMove(simulatedKing, destination);
+            clone.ReleaseClone();
+            
+            if (!safe) return false;
+        }
+        return true;
     }
     
     //Calculate the valid moves of a pawn
@@ -149,6 +227,9 @@ public class ChessEngine
             }
         }
         
+        //En Passant
+        
+        
         //Move Forward twice
         if (piece.movedOnce || hasPieceInFront) return validMoves;
         position.Y += piece.IsWhite() ? -1 : 1;
@@ -159,8 +240,6 @@ public class ChessEngine
             if (otherPiece == null)
                 TryToAddTileToList(position, piece, validMoves, board);
         }
-        
-        //En Passant
         
         return validMoves;
     }

@@ -149,7 +149,7 @@ public class BoardManagerEntity : Entity
     }
     
     //Function used to compute the move of a piece made by the player or the network
-    public void ComputeMove(ChessPieceEntity piece, ChessTileEntity moveTile, bool valid, bool sendToNetwork = true)
+    public void ComputeMove(ChessPieceEntity piece, ChessTileEntity moveTile, bool valid, bool sendToNetwork = true, bool switchTurns = true)
     {
         //Reset the color and state of all the tiles
         foreach (ChessTileEntity t in tiles)
@@ -162,6 +162,20 @@ public class BoardManagerEntity : Entity
         //Return of the move is not valid
         if (moveTile == null || piece == null || moveTile == piece.tile || valid == false) return;
 
+
+        if (moveTile.isCastleDestination)
+        {
+            //If the move is a castling, we need to move the rook too
+            ChessTileEntity rookDestination = moveTile.rookDestinationTile;
+            ChessPieceEntity rook = moveTile.castlePiece;
+            
+            if (rook != null && rookDestination != null)
+            {
+                MoveInducedByAction(rook.tile.gridPosition, rookDestination.gridPosition, false);
+                SendMoveToNetwork(rook, rookDestination);
+            }
+        }
+        
         //If the move is made by the player, send the move to the network
         if (sendToNetwork)
             SendMoveToNetwork(piece, moveTile);
@@ -176,8 +190,16 @@ public class BoardManagerEntity : Entity
         //Promotion
         if (piece.pieceType == Piece.Pawn && ((piece.IsWhite() && moveTile.gridCoordinates.Y == 0) || (!piece.IsWhite() && moveTile.gridCoordinates.Y == 7)))
             piece.PromoteToQueen();
-        
-        whiteTurn = !whiteTurn;
+
+        if (switchTurns)
+            whiteTurn = !whiteTurn;
+
+        foreach (ChessTileEntity tile in tiles)
+        {
+            tile.isCastleDestination = false;
+            tile.castlePiece = null;
+            tile.rookDestinationTile = null;
+        }
     }
 
     //Called to send the move to the network, we only send the origin and destination of the move
@@ -185,11 +207,12 @@ public class BoardManagerEntity : Entity
     {
         piece.originToNetwork = piece.tile.gridPosition;
         piece.destinationToNetwork = tile.gridPosition;
+        piece.castleMove = tile.isCastleDestination;
         ModInterop.PostUpdate(piece.id);
     }
     
-    //Called by the network to move the piece on the local scene, we only receive the origin and destination of the move
-    public void MoveReceivedByNetwork(int origin, int target)
+    //Called by the network (or castling) to move the piece on the local scene, we only receive the origin and destination of the move
+    public void MoveInducedByAction(int origin, int target,  bool switchActions = true)
     {
         //Determine the origin tile, the target tile and the piece based on the received positions
         ChessTileEntity originTile = GetTileByGridPosition(origin);
@@ -198,7 +221,7 @@ public class BoardManagerEntity : Entity
         
         if (piece == null || targetTile == null) return;
         
-        //Like in the hook called by local moves, disable the holdable, move the piece and compute it
+        //Like in the hook called by local moves, disable the holdable, move the piece and compute it 
         Holdable holdable = piece.Get<Holdable>();
         holdable.Active = false;
             
@@ -206,12 +229,12 @@ public class BoardManagerEntity : Entity
             holdable.Active = true;
         });
         
-        ComputeMove(piece, targetTile, true, false);
+        ComputeMove(piece, targetTile, true, false, switchActions);
     }
     
     
     //Function used to create a clone of the board, to check if the king will be in check
-    private BoardManagerEntity CloneBoard()
+    public BoardManagerEntity CloneBoard()
     {
         BoardManagerEntity clone = new(new EntityData(), Vector2.Zero);
         
@@ -279,7 +302,7 @@ public class BoardManagerEntity : Entity
     }
     
     //Swap the tile and piece values for the move
-    void SwapValuesForMove(ChessPieceEntity piece, ChessTileEntity destination)
+    public void SwapValuesForMove(ChessPieceEntity piece, ChessTileEntity destination)
     {
         piece.tile.piece = null;
         piece.tile = destination;

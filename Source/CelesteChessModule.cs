@@ -1,4 +1,7 @@
-﻿namespace Celeste.Mod.CelesteChess;
+﻿using Celeste.Mod.CoopHelper.IO;
+using MonoMod.ModInterop;
+
+namespace Celeste.Mod.CelesteChess;
 
 public class CelesteChessModule : EverestModule {
     public static CelesteChessModule Instance { get; private set; }
@@ -29,8 +32,8 @@ public class CelesteChessModule : EverestModule {
         //Black magic to prevent the player from crouching when pressing down while holding a Crystal
         IL.Celeste.Player.NormalUpdate += ChessHooks.IL_DropStopping;
         
-        //typeof(ModInterop).ModInterop();
-        //ModInterop.RegisterSyncedType(ChessPieceEntity.CoopHelperHeader, false, false, true, ChessPieceEntity.Parse);
+        typeof(ModInterop).ModInterop();
+        ModInterop.RegisterSyncedType(ChessPieceEntity.CoopHelperHeader, false, false, true, ChessPieceEntity.Parse);
     }
 
     public override void Unload()
