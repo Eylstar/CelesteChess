@@ -71,7 +71,7 @@ public class ChessHooks
             
             GhostPieceEntity ghostPiece = BoardManagerEntity.Instance.ghostPiece;
             if (ghostPiece != null)
-                ghostPiece.enabled = false;
+                ghostPiece.enabled = true;
             
             ModInterop.PostUpdate(BoardManagerEntity.Instance.ghostPiece.id);
         }

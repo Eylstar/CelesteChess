@@ -119,11 +119,13 @@ public class GhostPieceEntity : Entity
     
     public void ApplyState(object stateobj)
     {
+        Logger.Log(LogLevel.Error, "CelesteChess", "APPLYING STATE");
         if (stateobj is GhostState state)
         {
             BoardManagerEntity.Instance.ghostPiece.enabled = state.enabled;
             if (BoardManagerEntity.Instance.ghostPiece.storedPieceType != state.pieceType)
             {
+                Logger.Log(LogLevel.Error, "CelesteChess", "UPDATING SPRITE");
                 BoardManagerEntity.Instance.ghostPiece.ChangePieceSprite(state.pieceType, true);
             }
             BoardManagerEntity.Instance.ghostPiece.SetPosition(state.xPosition, state.yPosition);
@@ -132,6 +134,7 @@ public class GhostPieceEntity : Entity
 
     public void WriteState(CelesteNetBinaryWriter writer)
     {
+        Logger.Log(LogLevel.Error, "CelesteChess", "WRITING STATE");
         writer.Write(pieceType);
         writer.Write(xPosition);
         writer.Write(yPosition);

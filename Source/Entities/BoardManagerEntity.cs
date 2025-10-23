@@ -61,7 +61,7 @@ public class BoardManagerEntity : Entity
         
         ghostPiece = new GhostPieceEntity(new EntityData(), new Vector2(50, 50));
         Scene.Add(ghostPiece);
-        ghostPiece.enabled = false;
+        ghostPiece.enabled = true;
     }
 
     void AssignTilesValue()
