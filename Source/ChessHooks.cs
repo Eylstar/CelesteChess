@@ -37,7 +37,7 @@ public class ChessHooks
                 ghostPiece.pieceType = (int)piece.pieceType;
                 ModInterop.PostUpdate(BoardManagerEntity.Instance.ghostPiece.id);
                 
-                ghostPiece.HideFromSelf(true);
+                ghostPiece.HideFromSelf();
             }
         }
         return orig(self, hold);

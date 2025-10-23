@@ -61,7 +61,6 @@ public class BoardManagerEntity : Entity
         
         ghostPiece = new GhostPieceEntity(new EntityData(), new Vector2(50, 50));
         ghostPiece.enabled = false;
-        ghostPiece.HideFromSelf(true);
         Scene.Add(ghostPiece);
     }
 

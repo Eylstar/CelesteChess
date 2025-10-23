@@ -23,7 +23,6 @@ public class GhostPieceEntity : Entity
     int storedPieceType;
     
     List<Image> pieceSprites = new();
-    Image pieceSprite;
     Color pieceTint = new(0.5f, 0.5f, 0.5f, 0.5f);
     
     public GhostPieceEntity(EntityData data, Vector2 offset) : base(data.Position + offset) { }
@@ -59,30 +58,29 @@ public class GhostPieceEntity : Entity
             s.Origin = new Vector2((s.Width / 2), (s.Height / 2) + 3f);
             s.Color = pieceTint;
             pieceSprites.Add(s);
+            Add(s);
+            s.Visible = false;
         }
         
         storedPieceType = 0;
-        pieceSprite = pieceSprites[0];
-        pieceSprite.Origin = new Vector2((pieceSprite.Width / 2), (pieceSprite.Height / 2) + 3f);
-        pieceSprite.Color = pieceTint;
+        ChangePieceSprite(0);
         
-        Add(pieceSprite);
+        HideFromSelf();
     }
 
     public void ChangePieceSprite(int type)
     {
-        pieceSprite = pieceSprites[type];
+        foreach (Image i in pieceSprites)
+            i.Visible = false;
+        
+        pieceSprites[type].Visible = true;
         storedPieceType = type;
     }
-
-    public override void Update()
-    {
-        pieceSprite.Visible = enabled;
-    }
     
-    public void HideFromSelf(bool hide)
+    public void HideFromSelf()
     {
-        pieceSprite.Visible = !hide;
+        foreach (Image i in pieceSprites)
+            i.Visible = false;
     }
     public void SetPosition(float xpos, float ypos)
     {
@@ -127,7 +125,10 @@ public class GhostPieceEntity : Entity
         {
             GhostPieceEntity piece = BoardManagerEntity.Instance.ghostPiece;
             piece.enabled = state.enabled;
-            piece.HideFromSelf(!state.enabled);
+            if (!state.enabled)
+            {
+                piece.HideFromSelf();
+            }
             if (piece.storedPieceType != state.pieceType)
             {
                 Logger.Log(LogLevel.Error, "CelesteChess", "UPDATING SPRITE");
