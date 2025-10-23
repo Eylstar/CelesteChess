@@ -17,7 +17,7 @@ public class ChessHooks
         orig(self);
     }
     
-    //Calculate the valid moves of a piece when the player picks it up
+    //Calculate the valid moves of a piece when the player picks it up, or send to the network the pick up event for ghost piece
     public static bool OnPickup(On.Celeste.Player.orig_Pickup orig, Player self, Holdable hold)
     {
         if (hold.Entity is ChessPieceEntity piece && hold.Active)
@@ -27,6 +27,16 @@ public class ChessHooks
                 return false;
 
             BoardManagerEntity.Instance.CalculateValidMoves(TileOverlapDetection(piece), piece);
+            
+            GhostPieceEntity ghostPiece = BoardManagerEntity.Instance.ghostPiece;
+            if (ghostPiece != null)
+            {
+                ghostPiece.enabled = true;
+                ghostPiece.xPosition = piece.X;
+                ghostPiece.yPosition = piece.Y;
+                ghostPiece.pieceType = (int)piece.pieceType;
+            }
+            ModInterop.PostUpdate(BoardManagerEntity.Instance.ghostPiece.id);
         }
         return orig(self, hold);
     }
@@ -39,8 +49,6 @@ public class ChessHooks
             //Force the drop force being 0
             orig(self, new Vector2(0, 0));
             
-            BoardManagerEntity.Instance.ghostPiece.enabled = false;
-
             bool validMove = true;
             ChessTileEntity tile = TileOverlapDetection(piece);
             if (tile == null || !tile.isValidForActualMove)
@@ -60,6 +68,12 @@ public class ChessHooks
             });
             
             BoardManagerEntity.Instance.ComputeMove(piece, tile, validMove);
+            
+            GhostPieceEntity ghostPiece = BoardManagerEntity.Instance.ghostPiece;
+            if (ghostPiece != null)
+                ghostPiece.enabled = false;
+            
+            ModInterop.PostUpdate(BoardManagerEntity.Instance.ghostPiece.id);
         }
         else orig(self, force);
     }
@@ -87,11 +101,8 @@ public class ChessHooks
             GhostPieceEntity ghostPiece = BoardManagerEntity.Instance.ghostPiece;
             if (ghostPiece != null)
             {
-                ghostPiece.enabled = true;
                 ghostPiece.xPosition = pos.X;
                 ghostPiece.yPosition = pos.Y;
-                ghostPiece.pieceType = (int)piece.pieceType;
-                ghostPiece.isWhite = piece.IsWhite();
             }
             ModInterop.PostUpdate(BoardManagerEntity.Instance.ghostPiece.id);
         }

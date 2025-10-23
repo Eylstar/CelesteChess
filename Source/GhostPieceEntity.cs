@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Celeste.Mod.CelesteNet;
 using Celeste.Mod.Entities;
 using Microsoft.Xna.Framework;
@@ -15,31 +16,63 @@ public class GhostPieceEntity : Entity
 {
     public EntityID id;
     
-    public bool enabled = false;
-    
     public int pieceType;
-    public bool isWhite;
     public float xPosition;
     public float yPosition;
+    public bool enabled;
+    int storedPieceType;
     
+    List<Image> pieceSprites = new();
     Image pieceSprite;
-    Color pieceTint = new(0.75f, 0.75f, 0.75f);
+    Color pieceTint = new(0.5f, 0.5f, 0.5f);
     
     public GhostPieceEntity(EntityData data, Vector2 offset) : base(data.Position + offset) { }
     public override void Added(Scene scene)
     {
         base.Added(scene);
+        Depth = -100;
         
         // Create a new ID for the entity using a set constructor index by the board manager
         id = new EntityID(scene.ToString(), 666);
-        
         ModInterop.AddListener(this, id, CoopHelperHeader, false);
         
-        pieceSprite = new Image(GFX.Game[$"CelesteChess/pieces/Pawn"]);
+        SetupSprites();
+    }
+
+    void SetupSprites()
+    {
+        // Load all piece sprites and store them in the list
+        for (int i = 0; i <= 5; i++)
+        {
+            string pieceName = i switch
+            {
+                0 => "Pawn",
+                1 => "Rook",
+                2 => "Knight",
+                3 => "Bishop",
+                4 => "Queen",
+                5 => "King",
+                _ => default
+            };
+            
+            Image s = new Image(GFX.Game[$"CelesteChess/pieces/{pieceName}"]);
+            s.Origin = new Vector2((s.Width / 2), (s.Height / 2) + 3f);
+            s.Color = pieceTint;
+            pieceSprites.Add(s);
+        }
+        
+        storedPieceType = 0;
+        pieceSprite = pieceSprites[0];
         pieceSprite.Origin = new Vector2((pieceSprite.Width / 2), (pieceSprite.Height / 2) + 3f);
         pieceSprite.Color = pieceTint;
         
         Add(pieceSprite);
+    }
+
+    public void ChangePieceSprite(int type, bool white)
+    {
+        pieceSprite = pieceSprites[type];
+        storedPieceType = type;
     }
 
     public override void Update()
@@ -47,13 +80,10 @@ public class GhostPieceEntity : Entity
         pieceSprite.Visible = enabled;
     }
 
-    public void SetPosition(float xpos, float ypos, bool white, int type)
+    public void SetPosition(float xpos, float ypos)
     {
         // Set the position of the ghost piece based on the current piece type and color
-        Position = new Vector2(xPosition, yPosition);
-        Piece piece = (Piece)type;
-        Logger.Log(LogLevel.Error, "CelesteChess", $"Setting ghost piece position to: {xPosition}, {yPosition} with type: {piece} and color: {(white ? "White" : "Black")}");
-        pieceSprite = new Image(GFX.Game[$"CelesteChess/pieces/{piece + (white ? "" : "1")}"]);
+        Position = new Vector2(xpos, ypos);
     }
 
     public override void Removed(Scene scene)
@@ -73,17 +103,17 @@ public class GhostPieceEntity : Entity
     #region Coop Helper Integration
 
     //TODO CHANGER LE RANDOM ICI C'EST POUR DU DEBUG !!!!!!!!!!!!
-    //public static readonly int CoopHelperHeader = 747194269;
-    public static readonly int CoopHelperHeader = (int)Random.Shared.NextInt64(180000, 185000);
+    public static readonly int CoopHelperHeader = 747194269;
+    //public static readonly int CoopHelperHeader = (int)Random.Shared.NextInt64(180000, 185000);
 
     internal static object Parse(CelesteNetBinaryReader reader)
     {
         return new GhostState()
         {
             pieceType = reader.ReadInt32(),
-            isWhite = reader.ReadBoolean(),
             xPosition = reader.ReadSingle(),
-            yPosition = reader.ReadSingle()
+            yPosition = reader.ReadSingle(),
+            enabled = reader.ReadBoolean()
         };
     }
     
@@ -91,24 +121,29 @@ public class GhostPieceEntity : Entity
     {
         if (stateobj is GhostState state)
         {
-            BoardManagerEntity.Instance.ghostPiece.SetPosition(xPosition = state.xPosition, yPosition = state.yPosition, isWhite = state.isWhite, pieceType = state.pieceType);
+            BoardManagerEntity.Instance.ghostPiece.enabled = state.enabled;
+            if (BoardManagerEntity.Instance.ghostPiece.storedPieceType != state.pieceType)
+            {
+                BoardManagerEntity.Instance.ghostPiece.ChangePieceSprite(state.pieceType, true);
+            }
+            BoardManagerEntity.Instance.ghostPiece.SetPosition(state.xPosition, state.yPosition);
         }
     }
 
     public void WriteState(CelesteNetBinaryWriter writer)
     {
         writer.Write(pieceType);
-        writer.Write(isWhite);
         writer.Write(xPosition);
         writer.Write(yPosition);
+        writer.Write(enabled);
     }
     
     public class GhostState
     {
         public int pieceType;
-        public bool isWhite;
         public float xPosition;
         public float yPosition;
+        public bool enabled;
     }
 
 #endregion

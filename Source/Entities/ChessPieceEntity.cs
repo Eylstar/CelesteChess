@@ -114,8 +114,8 @@ public class ChessPieceEntity : TheoCrystal
 #region Coop Helper Integration
 
     //TODO CHANGER LE RANDOM ICI C'EST POUR DU DEBUG !!!!!!!!!!!!
-    //public static readonly int CoopHelperHeader = 21120208;
-    public static readonly int CoopHelperHeader = (int)Random.Shared.NextInt64(180000, 185000);
+    public static readonly int CoopHelperHeader = 21120208;
+    //public static readonly int CoopHelperHeader = (int)Random.Shared.NextInt64(180000, 185000);
 
     internal static object Parse(CelesteNetBinaryReader reader)
     {
@@ -133,14 +133,12 @@ public class ChessPieceEntity : TheoCrystal
     {
         if (stateobj is PieceState state)
         {
-            //Logger.Log(LogLevel.Error, "CelesteChess", $"APPLY STATE: {state.origin} to {state.destination}");
             BoardManagerEntity.Instance.MoveInducedByAction(state.origin, state.destination, !state.castleMove, state.pawnJustMovedTwice, state.AteWithEnPassant);
         }
     }
 
     public void WriteState(CelesteNetBinaryWriter writer)
     {
-        //Logger.Log(LogLevel.Error, "CelesteChess", $"WRITING STATE [ID={id}] {pieceType} from {originToNetwork} to {destinationToNetwork}");
         writer.Write(originToNetwork);
         writer.Write(destinationToNetwork);
         writer.Write(castleMove);
