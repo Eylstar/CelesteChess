@@ -13,8 +13,6 @@ namespace Celeste.Mod.CelesteChess;
 [CustomEntity("CelesteChess/GhostPiece")]
 public class GhostPieceEntity : Entity
 {
-    public GhostPieceEntity(EntityData data, Vector2 offset) : base(data.Position + offset) { }
-    
     public EntityID id;
     
     public bool enabled = false;
@@ -27,6 +25,7 @@ public class GhostPieceEntity : Entity
     Image pieceSprite;
     Color pieceTint = new(0.75f, 0.75f, 0.75f);
     
+    public GhostPieceEntity(EntityData data, Vector2 offset) : base(data.Position + offset) { }
     public override void Added(Scene scene)
     {
         base.Added(scene);
@@ -37,7 +36,7 @@ public class GhostPieceEntity : Entity
         ModInterop.AddListener(this, id, CoopHelperHeader, false);
         
         pieceSprite = new Image(GFX.Game[$"CelesteChess/pieces/Pawn"]);
-        pieceSprite.Origin = new Vector2(pieceSprite.Width / 2, (pieceSprite.Height / 2) + 2);
+        pieceSprite.Origin = new Vector2((pieceSprite.Width / 2), (pieceSprite.Height / 2) + 3f);
         pieceSprite.Color = pieceTint;
         
         Add(pieceSprite);
@@ -50,22 +49,32 @@ public class GhostPieceEntity : Entity
 
     public void SetPosition(float xpos, float ypos, bool white, int type)
     {
-        if (enabled)
-        {
-            // Set the position of the ghost piece based on the current piece type and color
-            Position = new Vector2(xPosition, yPosition);
-            Piece piece = (Piece)type;
-            Logger.Log(LogLevel.Error, "CelesteChess", $"Setting ghost piece position to: {xPosition}, {yPosition} with type: {piece} and color: {(white ? "White" : "Black")}");
-            pieceSprite = new Image(GFX.Game[$"CelesteChess/pieces/{piece + (white ? "" : "1")}"]);
-        }
+        // Set the position of the ghost piece based on the current piece type and color
+        Position = new Vector2(xPosition, yPosition);
+        Piece piece = (Piece)type;
+        Logger.Log(LogLevel.Error, "CelesteChess", $"Setting ghost piece position to: {xPosition}, {yPosition} with type: {piece} and color: {(white ? "White" : "Black")}");
+        pieceSprite = new Image(GFX.Game[$"CelesteChess/pieces/{piece + (white ? "" : "1")}"]);
     }
 
+    public override void Removed(Scene scene)
+    {
+        base.Removed(scene);
+        ModInterop.RemoveListener(id);
+    }
     
-#region Coop Helper Integration
+    public override void SceneEnd(Scene scene)
+    {
+        base.SceneEnd(scene);
+        ModInterop.RemoveListener(id);
+    }
+
+
+
+    #region Coop Helper Integration
 
     //TODO CHANGER LE RANDOM ICI C'EST POUR DU DEBUG !!!!!!!!!!!!
-    public static readonly int CoopHelperHeader = 747194269;
-    //public static readonly int CoopHelperHeader = (int)Random.Shared.NextInt64(180000, 185000);
+    //public static readonly int CoopHelperHeader = 747194269;
+    public static readonly int CoopHelperHeader = (int)Random.Shared.NextInt64(180000, 185000);
 
     internal static object Parse(CelesteNetBinaryReader reader)
     {

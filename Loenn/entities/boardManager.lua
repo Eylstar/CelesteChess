@@ -5,8 +5,7 @@ board_manager.depth = -10
 
 board_manager.placements = {
     name = "boardManager",
-    data = {
-    }
+    data = {}
 }
 
 return board_manager

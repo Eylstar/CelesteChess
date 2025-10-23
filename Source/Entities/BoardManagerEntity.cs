@@ -1,11 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
+using Celeste.Mod.CoopHelper;
 using Celeste.Mod.CoopHelper.IO;
 using Celeste.Mod.Entities;
 using Microsoft.Xna.Framework;
 using Monocle;
 
 namespace Celeste.Mod.CelesteChess;
+
+[CustomEntity("CelesteChess/BoardOutline")]
+public class BoardOutlineEntity : Entity
+{
+    Image sprite;
+    public BoardOutlineEntity(EntityData data, Vector2 offset) : base(data.Position + offset) { }
+
+    public override void Awake(Scene scene)
+    {
+        base.Awake(scene);
+        Depth = 100000000;
+        sprite = new Image(GFX.Game["CelesteChess/outline"]);
+        sprite.Origin = new Vector2(sprite.Width / 2f, sprite.Height / 2f);
+        Add(sprite);
+    }
+}
 
 [Tracked]
 [CustomEntity("CelesteChess/BoardManager")]
@@ -332,6 +349,8 @@ public class BoardManagerEntity : Entity
         piece.tile = destination;
         destination.piece = piece;
         piece.movedOnce = true;
+
+        int role = CoopHelperModule.Session.SessionRole;
     }
     
     //API to get a tile by its grid position

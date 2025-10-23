@@ -63,7 +63,7 @@ public class ChessPieceEntity : TheoCrystal
     {
         //Set the sprite based on the piece type and color
         s = new Image(GFX.Game[$"CelesteChess/pieces/{type + (color == ChessPieceColor.White ? "" : "1")}"]);
-        s.Origin = new Vector2(pieceSprite.Width / 2, (pieceSprite.Height / 2) + 2);
+        s.Origin = new Vector2((pieceSprite.Width / 2), (pieceSprite.Height / 2) + 3f);
     }
     
     public void PromoteToQueen()
@@ -114,8 +114,8 @@ public class ChessPieceEntity : TheoCrystal
 #region Coop Helper Integration
 
     //TODO CHANGER LE RANDOM ICI C'EST POUR DU DEBUG !!!!!!!!!!!!
-    public static readonly int CoopHelperHeader = 21120208;
-    //public static readonly int CoopHelperHeader = (int)Random.Shared.NextInt64(180000, 185000);
+    //public static readonly int CoopHelperHeader = 21120208;
+    public static readonly int CoopHelperHeader = (int)Random.Shared.NextInt64(180000, 185000);
 
     internal static object Parse(CelesteNetBinaryReader reader)
     {
