@@ -24,7 +24,7 @@ public class GhostPieceEntity : Entity
     
     List<Image> pieceSprites = new();
     Image pieceSprite;
-    Color pieceTint = new(0.5f, 0.5f, 0.5f);
+    Color pieceTint = new(0.5f, 0.5f, 0.5f, 0.5f);
     
     public GhostPieceEntity(EntityData data, Vector2 offset) : base(data.Position + offset) { }
     public override void Added(Scene scene)
@@ -69,7 +69,7 @@ public class GhostPieceEntity : Entity
         Add(pieceSprite);
     }
 
-    public void ChangePieceSprite(int type, bool white)
+    public void ChangePieceSprite(int type)
     {
         pieceSprite = pieceSprites[type];
         storedPieceType = type;
@@ -79,7 +79,11 @@ public class GhostPieceEntity : Entity
     {
         pieceSprite.Visible = enabled;
     }
-
+    
+    public void HideFromSelf(bool hide)
+    {
+        pieceSprite.Visible = !hide;
+    }
     public void SetPosition(float xpos, float ypos)
     {
         // Set the position of the ghost piece based on the current piece type and color
@@ -97,9 +101,8 @@ public class GhostPieceEntity : Entity
         base.SceneEnd(scene);
         ModInterop.RemoveListener(id);
     }
-
-
-
+    
+    
     #region Coop Helper Integration
 
     //TODO CHANGER LE RANDOM ICI C'EST POUR DU DEBUG !!!!!!!!!!!!
@@ -122,11 +125,13 @@ public class GhostPieceEntity : Entity
         Logger.Log(LogLevel.Error, "CelesteChess", "APPLYING STATE");
         if (stateobj is GhostState state)
         {
-            BoardManagerEntity.Instance.ghostPiece.enabled = state.enabled;
-            if (BoardManagerEntity.Instance.ghostPiece.storedPieceType != state.pieceType)
+            GhostPieceEntity piece = BoardManagerEntity.Instance.ghostPiece;
+            piece.enabled = state.enabled;
+            piece.HideFromSelf(!state.enabled);
+            if (piece.storedPieceType != state.pieceType)
             {
                 Logger.Log(LogLevel.Error, "CelesteChess", "UPDATING SPRITE");
-                BoardManagerEntity.Instance.ghostPiece.ChangePieceSprite(state.pieceType, true);
+                piece.ChangePieceSprite(state.pieceType);
             }
             BoardManagerEntity.Instance.ghostPiece.SetPosition(state.xPosition, state.yPosition);
         }

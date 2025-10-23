@@ -35,8 +35,10 @@ public class ChessHooks
                 ghostPiece.xPosition = piece.X;
                 ghostPiece.yPosition = piece.Y;
                 ghostPiece.pieceType = (int)piece.pieceType;
+                ModInterop.PostUpdate(BoardManagerEntity.Instance.ghostPiece.id);
+                
+                ghostPiece.HideFromSelf(true);
             }
-            ModInterop.PostUpdate(BoardManagerEntity.Instance.ghostPiece.id);
         }
         return orig(self, hold);
     }
@@ -71,7 +73,7 @@ public class ChessHooks
             
             GhostPieceEntity ghostPiece = BoardManagerEntity.Instance.ghostPiece;
             if (ghostPiece != null)
-                ghostPiece.enabled = true;
+                ghostPiece.enabled = false;
             
             ModInterop.PostUpdate(BoardManagerEntity.Instance.ghostPiece.id);
         }
