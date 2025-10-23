@@ -20,6 +20,7 @@
         <PackageReference Include="MonoMod.RuntimeDetour" Version="25.2.3" PrivateAssets="all" ExcludeAssets="runtime" />
         <PackageReference Include="MonoMod.Patcher" Version="25.0.0-prerelease.2" />
         <PackageReference Include="CelesteAnalyzer" Version="*" />
+	<PackageReference Include="Mono.Cecil" Version="0.11.6" />
     </ItemGroup>
 
     <ItemGroup>
@@ -52,6 +53,7 @@
     <PropertyGroup>
         <PathMap>$(MSBuildProjectDirectory)=CelesteChess/</PathMap>
     </PropertyGroup>
+
 
     <!-- Inline task used to create a .zip for the mod -->
     <UsingTask TaskName="PackageMod"
