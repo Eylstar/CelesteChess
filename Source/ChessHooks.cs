@@ -23,7 +23,7 @@ public class ChessHooks
         if (hold.Entity is ChessPieceEntity piece && hold.Active)
         {
             //If the piece is not the player's turn, return
-            if (BoardManagerEntity.Instance.whiteTurn != piece.IsWhite())
+            if (BoardManagerEntity.Instance.whiteTurn != piece.IsWhite() || !BoardManagerEntity.Instance.canMoveThisTurn)
                 return false;
 
             BoardManagerEntity.Instance.CalculateValidMoves(TileOverlapDetection(piece), piece);

@@ -92,3 +92,22 @@ public enum TileColor
     White,
     Black
 }
+
+
+
+
+[CustomEntity("CelesteChess/BoardOutline")]
+public class BoardOutlineEntity : Entity
+{
+    Image sprite;
+    public BoardOutlineEntity(EntityData data, Vector2 offset) : base(data.Position + offset) { }
+
+    public override void Awake(Scene scene)
+    {
+        base.Awake(scene);
+        Depth = 100000000;
+        sprite = new Image(GFX.Game["CelesteChess/outline"]);
+        sprite.Origin = new Vector2(sprite.Width / 2f, sprite.Height / 2f);
+        Add(sprite);
+    }
+}

@@ -8,22 +8,6 @@ using Monocle;
 
 namespace Celeste.Mod.CelesteChess;
 
-[CustomEntity("CelesteChess/BoardOutline")]
-public class BoardOutlineEntity : Entity
-{
-    Image sprite;
-    public BoardOutlineEntity(EntityData data, Vector2 offset) : base(data.Position + offset) { }
-
-    public override void Awake(Scene scene)
-    {
-        base.Awake(scene);
-        Depth = 100000000;
-        sprite = new Image(GFX.Game["CelesteChess/outline"]);
-        sprite.Origin = new Vector2(sprite.Width / 2f, sprite.Height / 2f);
-        Add(sprite);
-    }
-}
-
 [Tracked]
 [CustomEntity("CelesteChess/BoardManager")]
 public class BoardManagerEntity : Entity
@@ -35,10 +19,15 @@ public class BoardManagerEntity : Entity
     
     Player player;
     public bool whiteTurn = true;
+    bool isWhitePlayer;
+    
+    public bool canMoveThisTurn => (isWhitePlayer && whiteTurn) || (!isWhitePlayer && !whiteTurn);
     
     List<ChessTileEntity> tiles = new();
     List<ChessTileEntity> validMoves = new();
     public ChessTileEntity hoveredTile;
+
+    
     
     public BoardManagerEntity(EntityData data, Vector2 offset) : base(data.Position + offset) { }
 
@@ -62,6 +51,8 @@ public class BoardManagerEntity : Entity
         ghostPiece = new GhostPieceEntity(new EntityData(), new Vector2(50, 50));
         ghostPiece.enabled = false;
         Scene.Add(ghostPiece);
+
+        isWhitePlayer = CoopHelperModule.Session.SessionRole == 0;
     }
 
     void AssignTilesValue()
