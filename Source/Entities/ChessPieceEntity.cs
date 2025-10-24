@@ -77,7 +77,7 @@ public class ChessPieceEntity : TheoCrystal
         base.Update();
         
         //Update the alpha of the piece based on the overlapping state with the player
-        if (ChessHelpers.TryGetPlayer(out player) && player.CollideCheck(this) && player.Holding == null && BoardManagerEntity.Instance.whiteTurn == IsWhite())
+        if (ChessHelpers.TryGetPlayer(out player) && player.CollideCheck(this) && player.Holding == null && BoardManagerEntity.Instance.whiteTurn == IsWhite() && BoardManagerEntity.Instance.canMoveThisTurn)
             pieceSprite.Color = pieceTint * 0.75f;
         else
             pieceSprite.Color = Color.White;

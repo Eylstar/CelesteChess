@@ -54,7 +54,7 @@ public class GhostPieceEntity : Entity
     public void ChangePieceSprite(int type)
     {
         Remove(pieceSprite);
-        pieceSprite = new Image(GFX.Game[$"CelesteChess/pieces/{(Piece)type}"]);
+        pieceSprite = new Image(GFX.Game[$"CelesteChess/pieces/{(Piece)type}" + (BoardManagerEntity.Instance.isWhitePlayer ? "1" : "")]);
         pieceSprite.Origin = new Vector2((pieceSprite.Width / 2), (pieceSprite.Height / 2) + 3f);
         pieceSprite.Color = pieceTint;
         Add(pieceSprite);

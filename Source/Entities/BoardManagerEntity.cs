@@ -19,7 +19,7 @@ public class BoardManagerEntity : Entity
     
     Player player;
     public bool whiteTurn = true;
-    bool isWhitePlayer;
+    public bool isWhitePlayer;
     
     public bool canMoveThisTurn => (isWhitePlayer && whiteTurn) || (!isWhitePlayer && !whiteTurn);
     
