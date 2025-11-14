@@ -66,16 +66,10 @@ public class BoardManagerEntity : Entity
 
     void SetupTimers()
     {
-        timerEntity = Scene.Tracker.GetEntities<TimerEntity>().Cast<TimerEntity>().FirstOrDefault(t => t.isBlack == isWhitePlayer);
-        otherPlayerTimerEntity = Scene.Tracker.GetEntities<TimerEntity>().Cast<TimerEntity>().FirstOrDefault(t => t.isBlack != isWhitePlayer);
+        timerEntity = Scene.Tracker.GetEntities<TimerEntity>().Cast<TimerEntity>().FirstOrDefault(t => t.isBlack == !isWhitePlayer);
+        otherPlayerTimerEntity = Scene.Tracker.GetEntities<TimerEntity>().Cast<TimerEntity>().FirstOrDefault(t => t.isBlack == isWhitePlayer);
         timerEntity?.UpdateTimer(TimeSpan.FromSeconds(gameDuration).ToString(@"mm\:ss"));
         otherPlayerTimerEntity?.UpdateTimer(TimeSpan.FromSeconds(gameDuration).ToString(@"mm\:ss"));
-        if (!isWhitePlayer && timerEntity != null && otherPlayerTimerEntity != null)
-        {
-            Vector2 tempPos = timerEntity.Position;
-            timerEntity.Position = otherPlayerTimerEntity.Position;
-            otherPlayerTimerEntity.Position = tempPos;
-        }
     }
 
     void AssignTilesValue()
