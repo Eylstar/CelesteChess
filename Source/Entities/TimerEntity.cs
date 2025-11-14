@@ -10,7 +10,7 @@ namespace Celeste.Mod.CelesteChess;
 public class TimerEntity : Entity
 {
     public bool isBlack;
-    
+    Color displayColor = Color.White;
     
     //bool isRunning = true;
     
@@ -36,10 +36,15 @@ public class TimerEntity : Entity
     {
         timeString = time;
     }
+    
+    public void SetDisplayColor(Color color)
+    {
+        displayColor = color;
+    }
 
     public override void Render()
     {
         base.Render();
-        timerText.PrintCentered(Position, timeString, true, 8, Color.White, Color.Black);
+        timerText.PrintCentered(Position, timeString, true, 8, displayColor, Color.Black);
     }
 }

@@ -139,6 +139,11 @@ public class BoardManagerEntity : Entity
                 player.Position = tiles[27].Position + new Vector2(Math.Abs(tiles[27].Width / 2), 6);
         }
         
+        ControlTimerStates();
+    }
+
+    void ControlTimerStates()
+    {
         //Update the timer
         if (timerEntity == null)
             return;
@@ -169,6 +174,8 @@ public class BoardManagerEntity : Entity
                 otherPlayerTimerEntity.UpdateTimer(TimeSpan.FromSeconds(Math.Max(0, gameDuration - elapsedOtherPlayerTime)).ToString(@"mm\:ss"));
             }
         }
+        timerEntity.SetDisplayColor(canMoveThisTurn ? Color.White : Color.Gray);
+        otherPlayerTimerEntity.SetDisplayColor(!canMoveThisTurn ? Color.White : Color.Gray);
     }
     
     
