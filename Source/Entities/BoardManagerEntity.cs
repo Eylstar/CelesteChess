@@ -19,9 +19,11 @@ public class BoardManagerEntity : Entity
     
     ChessPieceEntity lastMovedPiece = null;
     
-    float elapsedGameTime = 0f;
+    float elapsedTurnTime = 0f;
+    float elapsedOtherPlayerTime = 0f;
     float gameDuration = 800f;
     TimerEntity timerEntity;
+    TimerEntity otherPlayerTimerEntity;
     
     Player player;
     public bool whiteTurn = true;
@@ -60,6 +62,7 @@ public class BoardManagerEntity : Entity
         isWhitePlayer = CoopHelperModule.Session.SessionRole == 0;
         
         timerEntity = Scene.Tracker.GetEntities<TimerEntity>().Cast<TimerEntity>().FirstOrDefault(t => t.isBlack == isWhitePlayer);
+        otherPlayerTimerEntity = Scene.Tracker.GetEntities<TimerEntity>().Cast<TimerEntity>().FirstOrDefault(t => t.isBlack != isWhitePlayer);
     }
 
     void AssignTilesValue()
@@ -133,17 +136,30 @@ public class BoardManagerEntity : Entity
         if (timerEntity == null)
             return;
 
-        if (isWhitePlayer && whiteTurn)
+        if (canMoveThisTurn)
         {
-            if (elapsedGameTime >= gameDuration)
+            if (elapsedTurnTime >= gameDuration)
             {
-                elapsedGameTime = gameDuration;
+                elapsedTurnTime = gameDuration;
                 //TODO HANDLE END GAME
             }
             else
             {
-                elapsedGameTime += Engine.DeltaTime;
-                timerEntity.UpdateTimer(TimeSpan.FromSeconds(Math.Max(0, gameDuration - elapsedGameTime)).ToString(@"mm\:ss"));
+                elapsedTurnTime += Engine.DeltaTime;
+                timerEntity.UpdateTimer(TimeSpan.FromSeconds(Math.Max(0, gameDuration - elapsedTurnTime)).ToString(@"mm\:ss"));
+            }
+        }
+        else
+        {
+            if (elapsedOtherPlayerTime >= gameDuration)
+            {
+                elapsedOtherPlayerTime = gameDuration;
+                //TODO HANDLE END GAME
+            }
+            else
+            {
+                elapsedOtherPlayerTime += Engine.DeltaTime;
+                otherPlayerTimerEntity.UpdateTimer(TimeSpan.FromSeconds(Math.Max(0, gameDuration - elapsedOtherPlayerTime)).ToString(@"mm\:ss"));
             }
         }
     }
@@ -258,7 +274,7 @@ public class BoardManagerEntity : Entity
                 isCastleKingSide = flagCastleKing,
                 isCastleQueenSide = flagCastleQueen,
                 promotionPiece = flagPromotion ? Piece.Queen : piece.pieceType,
-                isCheck = IsInCheck(false)
+                isCheck = IsInCheck(true)
             };
             Scene.Tracker.GetEntity<MovesDisplayEntity>()?.AddMove(move);
         }
@@ -345,12 +361,15 @@ public class BoardManagerEntity : Entity
         SwapValuesForMove(piece, destination);
         
         //If the simulated move puts the king in check, return false to mark the move as not safe / valid
-        return !IsInCheck(true);
+        return !IsInCheck();
     }
 
-    //Called by the clone, used to check if the king is in check ~uwu~
-    public bool IsInCheck(bool simulation)
+    //Used to check if the king is in check
+    public bool IsInCheck(bool swap = false)
     {
+        if (swap)
+            whiteTurn = !whiteTurn;
+        
         //Create a list of every attacked tile by the pieces of the player
         List<ChessTileEntity> attackedTiles = new();
         foreach (ChessTileEntity tile in tiles)
@@ -363,9 +382,14 @@ public class BoardManagerEntity : Entity
         foreach (ChessTileEntity tile in attackedTiles)
         {
             if (tile.piece?.pieceType == Piece.King)
+            {
+                if (swap)
+                    whiteTurn = !whiteTurn;
                 return true;
+            }
         }
-        
+        if (swap)
+            whiteTurn = !whiteTurn;
         return false;
     }
     
