@@ -23,7 +23,7 @@ public class GhostPieceEntity : Entity
     int storedPieceType;
     
     Image pieceSprite;
-    Color pieceTint = new(1f, 1f, 1f, 0.5f);
+    Color pieceTint = new(0.75f, 0.75f, 0.75f, 0.5f);
     
     public GhostPieceEntity(EntityData data, Vector2 offset) : base(data.Position + offset) { }
     public override void Added(Scene scene)
@@ -54,7 +54,7 @@ public class GhostPieceEntity : Entity
     public void ChangePieceSprite(int type)
     {
         Remove(pieceSprite);
-        pieceSprite = new Image(GFX.Game[$"CelesteChess/pieces/{(Piece)type}" + (BoardManagerEntity.Instance.isWhitePlayer ? "1" : "")]);
+        pieceSprite = new Image(GFX.Game[$"CelesteChess/pieces/{(Piece)type}"+"1"]);
         pieceSprite.Origin = new Vector2((pieceSprite.Width / 2), (pieceSprite.Height / 2) + 3f);
         pieceSprite.Color = pieceTint;
         Add(pieceSprite);
@@ -67,7 +67,6 @@ public class GhostPieceEntity : Entity
     }
     public void SetPosition(float xpos, float ypos)
     {
-        // Set the position of the ghost piece based on the current piece type and color
         Position = new Vector2(xpos, ypos);
     }
 
@@ -87,8 +86,8 @@ public class GhostPieceEntity : Entity
     #region Coop Helper Integration
 
     //TODO CHANGER LE RANDOM ICI C'EST POUR DU DEBUG !!!!!!!!!!!!
-    public static readonly int CoopHelperHeader = 747194269;
-    //public static readonly int CoopHelperHeader = (int)Random.Shared.NextInt64(180000, 185000);
+    //public static readonly int CoopHelperHeader = 747194269;
+    public static readonly int CoopHelperHeader = (int)Random.Shared.NextInt64(180000, 185000);
 
     internal static object Parse(CelesteNetBinaryReader reader)
     {

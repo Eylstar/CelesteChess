@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Celeste.Mod.CoopHelper;
 using Celeste.Mod.CoopHelper.IO;
 using Celeste.Mod.Entities;
@@ -13,9 +14,14 @@ namespace Celeste.Mod.CelesteChess;
 public class BoardManagerEntity : Entity
 {
     public static BoardManagerEntity Instance;
+    
     public GhostPieceEntity ghostPiece;
     
     ChessPieceEntity lastMovedPiece = null;
+    
+    float elapsedGameTime = 0f;
+    float gameDuration = 800f;
+    TimerEntity timerEntity;
     
     Player player;
     public bool whiteTurn = true;
@@ -26,8 +32,6 @@ public class BoardManagerEntity : Entity
     List<ChessTileEntity> tiles = new();
     List<ChessTileEntity> validMoves = new();
     public ChessTileEntity hoveredTile;
-
-    
     
     public BoardManagerEntity(EntityData data, Vector2 offset) : base(data.Position + offset) { }
 
@@ -48,11 +52,14 @@ public class BoardManagerEntity : Entity
         AssignTilesValue();
         SpawnChessPieces();
         
+        //Spawn the ghost piece used for visualizing other player's move
         ghostPiece = new GhostPieceEntity(new EntityData(), new Vector2(50, 50));
         ghostPiece.enabled = false;
         Scene.Add(ghostPiece);
 
         isWhitePlayer = CoopHelperModule.Session.SessionRole == 0;
+        
+        timerEntity = Scene.Tracker.GetEntities<TimerEntity>().Cast<TimerEntity>().FirstOrDefault(t => t.isBlack == isWhitePlayer);
     }
 
     void AssignTilesValue()
@@ -121,10 +128,28 @@ public class BoardManagerEntity : Entity
             if (Input.DashPressed) 
                 player.Position = tiles[27].Position + new Vector2(Math.Abs(tiles[27].Width / 2), 6);
         }
+        
+        //Update the timer
+        if (timerEntity == null)
+            return;
+
+        if (isWhitePlayer && whiteTurn)
+        {
+            if (elapsedGameTime >= gameDuration)
+            {
+                elapsedGameTime = gameDuration;
+                //TODO HANDLE END GAME
+            }
+            else
+            {
+                elapsedGameTime += Engine.DeltaTime;
+                timerEntity.UpdateTimer(TimeSpan.FromSeconds(Math.Max(0, gameDuration - elapsedGameTime)).ToString(@"mm\:ss"));
+            }
+        }
     }
     
     
-    //Calculate the valid moves of a piece
+    //Calculate the valid moves of a piece and store them in the validMoves list
     public void CalculateValidMoves(ChessTileEntity tile, ChessPieceEntity piece)
     {
         if (piece == null || tile == null) return;
@@ -176,8 +201,14 @@ public class BoardManagerEntity : Entity
         
         //Return of the move is not valid
         if (moveTile == null || piece == null || moveTile == piece.tile || valid == false) return;
-
-
+        
+        //Creation of information flags to store the move data, for displaying it later
+        ChessTileEntity flagOriginTile = piece.tile;
+        bool flagCapture = (moveTile.enPassantCapturePiece ?? moveTile.piece) != null;
+        bool flagPromotion = piece.pieceType == Piece.Pawn && ((piece.IsWhite() && moveTile.gridCoordinates.Y == 0) || (!piece.IsWhite() && moveTile.gridCoordinates.Y == 7));
+        bool flagCastleKing = piece.pieceType == Piece.King && Math.Abs(moveTile.gridCoordinates.X - flagOriginTile.gridCoordinates.X) == 2 && moveTile.gridCoordinates.X > flagOriginTile.gridCoordinates.X;
+        bool flagCastleQueen = piece.pieceType == Piece.King && Math.Abs(moveTile.gridCoordinates.X - flagOriginTile.gridCoordinates.X) == 2 && moveTile.gridCoordinates.X < flagOriginTile.gridCoordinates.X;
+        
         if (moveTile.isCastleDestination)
         {
             //If the move is a castling, we need to move the rook too
@@ -201,7 +232,6 @@ public class BoardManagerEntity : Entity
         
         //Eating
         Scene.Remove(moveTile.enPassantCapturePiece ?? moveTile.piece);
-            
         
         //Move the piece to the tile and set the tile as the new tile of the piece
         SwapValuesForMove(piece, moveTile);
@@ -214,6 +244,23 @@ public class BoardManagerEntity : Entity
         {
             whiteTurn = !whiteTurn;
             lastMovedPiece = piece;
+            
+            //Create the move to display and add it to the moves display entity
+            MoveToDisplay move = new MoveToDisplay
+            {
+                piece = piece.pieceType,
+                fromFile = (int)flagOriginTile.gridCoordinates.X,
+                fromRank = (int)flagOriginTile.gridCoordinates.Y,
+                toFile = (int)moveTile.gridCoordinates.X,
+                toRank = (int)moveTile.gridCoordinates.Y,
+                isCapture = flagCapture,
+                isPromotion = flagPromotion,
+                isCastleKingSide = flagCastleKing,
+                isCastleQueenSide = flagCastleQueen,
+                promotionPiece = flagPromotion ? Piece.Queen : piece.pieceType,
+                isCheck = IsInCheck(false)
+            };
+            Scene.Tracker.GetEntity<MovesDisplayEntity>()?.AddMove(move);
         }
 
         foreach (ChessTileEntity tile in tiles)
@@ -225,6 +272,7 @@ public class BoardManagerEntity : Entity
             tile.enPassantCapturePiece = null;
         }
     }
+    
 
     //Called to send the move to the network, we only send the origin and destination of the move
     public void SendMoveToNetwork(ChessPieceEntity piece, ChessTileEntity tile, bool rookCastling = false)
@@ -340,11 +388,9 @@ public class BoardManagerEntity : Entity
         piece.tile = destination;
         destination.piece = piece;
         piece.movedOnce = true;
-
-        int role = CoopHelperModule.Session.SessionRole;
     }
     
-    //API to get a tile by its grid position
+    //Get a tile by its grid position
     public ChessTileEntity GetTileByGridPosition(int gridPosition)
     {
         if (gridPosition < 0 || gridPosition >= tiles.Count)
@@ -353,7 +399,7 @@ public class BoardManagerEntity : Entity
         return tiles[gridPosition];
     }
     
-    //API to get a tile by its grid coordinates
+    //Get a tile by its grid coordinates
     public ChessTileEntity GetTileByGridCoordinates(Vector2 gridCoordinates)
     {
         int gridPosition = (int)gridCoordinates.Y * 8 + (int)gridCoordinates.X;

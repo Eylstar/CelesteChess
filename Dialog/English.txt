@@ -1,0 +1,5 @@
+maddiehelpinghand_chapternumber_Eylstar_CelesteChess_ChessTests=
+
+Eylstar_CelesteChess= Celeste Chess
+Eylstar_CelesteChess_ChessTests= Celeste Chess
+
