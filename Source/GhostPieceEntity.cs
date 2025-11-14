@@ -86,8 +86,8 @@ public class GhostPieceEntity : Entity
     #region Coop Helper Integration
 
     //TODO CHANGER LE RANDOM ICI C'EST POUR DU DEBUG !!!!!!!!!!!!
-    //public static readonly int CoopHelperHeader = 747194269;
-    public static readonly int CoopHelperHeader = (int)Random.Shared.NextInt64(180000, 185000);
+    public static readonly int CoopHelperHeader = 747194269;
+    //public static readonly int CoopHelperHeader = (int)Random.Shared.NextInt64(180000, 185000);
 
     internal static object Parse(CelesteNetBinaryReader reader)
     {

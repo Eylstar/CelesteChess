@@ -115,8 +115,8 @@ public class ChessPieceEntity : TheoCrystal
 #region Coop Helper Integration
 
     //TODO CHANGER LE RANDOM ICI C'EST POUR DU DEBUG !!!!!!!!!!!!
-    //public static readonly int CoopHelperHeader = 21120208;
-    public static readonly int CoopHelperHeader = (int)Random.Shared.NextInt64(180000, 185000);
+    public static readonly int CoopHelperHeader = 21120208;
+    //public static readonly int CoopHelperHeader = (int)Random.Shared.NextInt64(180000, 185000);
 
     internal static object Parse(CelesteNetBinaryReader reader)
     {
