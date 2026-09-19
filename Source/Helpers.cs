@@ -82,7 +82,7 @@ public class PlutoniumText : Component
         Print(pos - new Vector2((float)Math.Floor(stringlen / 2f), (float)Math.Floor(FontSize.Y / 2f)), str, shadow, spacing, mainColor, outlineColor, scale, id);
     }
 
-    public void Print(Vector2 pos, string str, bool shadow, int spacing, Color mainColor, Color outlineColor, float scale = 1, int id = 0)
+    public void Print(Vector2 pos, string str, bool shadow, float spacing, Color mainColor, Color outlineColor, float scale = 1, int id = 0)
     {
         SpriteEffects flip = SaveData.Instance.Assists.MirrorMode ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
         if (SaveData.Instance.Assists.MirrorMode) str = new string(str.Reverse().ToArray());

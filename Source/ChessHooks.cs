@@ -32,6 +32,7 @@ public class ChessHooks
             if (ghostPiece != null)
             {
                 ghostPiece.enabled = true;
+                ghostPiece.isWhite = piece.IsWhite();
                 ghostPiece.xPosition = piece.X;
                 ghostPiece.yPosition = piece.Y;
                 ghostPiece.pieceType = (int)piece.pieceType;

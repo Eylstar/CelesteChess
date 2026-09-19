@@ -1,4 +1,9 @@
-﻿using Celeste.Mod.CoopHelper.IO;
+﻿using System;
+using Celeste.Mod.Celeste3DEngine;
+using Celeste.Mod.CoopHelper.IO;
+using Monocle;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using MonoMod.ModInterop;
 
 namespace Celeste.Mod.CelesteChess;

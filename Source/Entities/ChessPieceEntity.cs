@@ -64,13 +64,16 @@ public class ChessPieceEntity : TheoCrystal
     {
         //Set the sprite based on the piece type and color
         s = new Image(GFX.Game[$"CelesteChess/pieces/{type + (color == ChessPieceColor.White ? "" : "1")}"]);
-        s.Origin = new Vector2((pieceSprite.Width / 2), (pieceSprite.Height / 2) + 3f);
+        s.Origin = new Vector2(s.Width / 2, s.Height / 2 + 3f);
     }
     
     public void PromoteToQueen()
     {
         pieceType = Piece.Queen;
+        if (pieceSprite != null)
+            Remove(pieceSprite);
         AssignSprite(out pieceSprite, pieceType, ChessPieceColor);
+        Add(pieceSprite);
     }
     
     public override void Update()
@@ -78,7 +81,9 @@ public class ChessPieceEntity : TheoCrystal
         base.Update();
         
         //Update the alpha of the piece based on the overlapping state with the player
-        if (ChessHelpers.TryGetPlayer(out player) && player.CollideCheck(this) && player.Holding == null && BoardManagerEntity.Instance.whiteTurn == IsWhite() && BoardManagerEntity.Instance.canMoveThisTurn)
+        if (ChessHelpers.TryGetPlayer(out player) && player.CollideCheck(this) 
+                                                  && player.Holding == null && BoardManagerEntity.Instance.whiteTurn == IsWhite() 
+                                                  && BoardManagerEntity.Instance.canMoveThisTurn)
             pieceSprite.Color = pieceTint * 0.75f;
         else
             pieceSprite.Color = Color.White;
@@ -96,6 +101,7 @@ public class ChessPieceEntity : TheoCrystal
         clone.pieceType = pieceType;
         clone.ChessPieceColor = ChessPieceColor;
         clone.movedOnce = movedOnce;
+        clone.pawnJustMovedTwice = pawnJustMovedTwice;
         return clone;
     }
 
@@ -116,7 +122,7 @@ public class ChessPieceEntity : TheoCrystal
 
     //TODO CHANGER LE RANDOM ICI C'EST POUR DU DEBUG !!!!!!!!!!!!
     public static readonly int CoopHelperHeader = 21120208;
-    //public static readonly int CoopHelperHeader = (int)Random.Shared.NextInt64(180000, 185000);
+    //public static readonly int CoopHelperHeader = (int)Random.Shared.NextInt64(180000, 18500000000);
 
     internal static object Parse(CelesteNetBinaryReader reader)
     {

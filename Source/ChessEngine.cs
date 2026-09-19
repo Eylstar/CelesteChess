@@ -199,7 +199,7 @@ public class ChessEngine
         
         
         //En Passant
-        Vector2 leftPawn = position + new Vector2(-1, 0);
+        /*Vector2 leftPawn = position + new Vector2(-1, 0);
         Vector2 rightPawn = position + new Vector2(1, 0);
         
         ChessPieceEntity leftPawnPiece = board.GetTileByGridCoordinates(leftPawn).piece;
@@ -223,6 +223,18 @@ public class ChessEngine
                 ChessTileEntity tileToAdd = board.GetTileByGridCoordinates(destination);
                 tileToAdd.enPassantCapturePiece = board.GetTileByGridCoordinates(rightPawn).piece;
             }
+        }*/
+        foreach (int side in new[] { -1, 1 })
+        {
+            Vector2 neighbourPos = position + new Vector2(side, 0);
+            if (!IsInsideBoard(neighbourPos)) continue;
+
+            ChessPieceEntity other = board.GetTileByGridCoordinates(neighbourPos).piece;
+            if (other == null || other.pieceType != Piece.Pawn || other.ChessPieceColor == piece.ChessPieceColor || !other.pawnJustMovedTwice) continue;
+
+            Vector2 destination = position + new Vector2(side, piece.IsWhite() ? -1 : 1);
+            if (IsInsideBoard(destination) && TryToAddTileToList(destination, piece, validMoves, board))
+                board.GetTileByGridCoordinates(destination).enPassantCapturePiece = other;
         }
 
         

@@ -27,7 +27,7 @@ public class MovesDisplayEntity : Entity
 
         for (int i = 0; i < maxMovesToShow; i++)
         {
-            PlutoniumText t = new PlutoniumText("CelesteChess/fonts/movesFont", "0123456789 abcdefghx+-.kqrn=", new Vector2(4, 6));
+            PlutoniumText t = new PlutoniumText("CelesteChess/fonts/movesFont", "0123456789 abcdefghx+-.KQRNB=", new Vector2(4, 6));
             moveTexts.Add(t);
             Add(t);
         }
@@ -60,9 +60,9 @@ public class MovesDisplayEntity : Entity
     public override void Update()
     {
         base.Update();
-        if (Input.Jump.Pressed)
+        if (Input.CrouchDashPressed)
         {
-            //AddMoveDebug();
+            AddMoveDebug();
         }
     }
 
@@ -73,8 +73,8 @@ public class MovesDisplayEntity : Entity
 
         foreach (var kvp in movesDict.OrderBy(p => p.Key))
         {
-            string before = kvp.Key < 10 ? " " : "";
-            moveTexts[i].Print(Position + new Vector2(0, i * lineHeight), $"{before}{kvp.Key}.  {kvp.Value}", true, 4, new Color(0.8f, 0.8f, 0.8f, 0.8f), Color.Black);
+            int move = kvp.Key % 2;
+            moveTexts[i].Print(Position + new Vector2(0, i * lineHeight), $"{(move == 1 ? kvp.Key / 2 < 10 ? " " : "" : "  ")}{(move == 1 ? (kvp.Key / 2) + 1 : "")}{(move == 1 ? "." : " ")}  {kvp.Value}", true, 4.5f, new Color(0.8f, 0.8f, 0.8f, 0.8f), Color.Black);
             i++;
         }
     }
@@ -93,11 +93,11 @@ static class MoveToNotation
     {
         return p switch
         {
-            Piece.King => "k",
-            Piece.Queen => "q",
-            Piece.Rook => "r",
-            Piece.Bishop => "b",
-            Piece.Knight => "n",
+            Piece.King => "K",
+            Piece.Queen => "Q",
+            Piece.Rook => "R",
+            Piece.Bishop => "B",
+            Piece.Knight => "N",
             Piece.Pawn => "",
             _ => ""
         };

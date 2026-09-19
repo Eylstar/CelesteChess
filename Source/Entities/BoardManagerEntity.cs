@@ -6,6 +6,8 @@ using Celeste.Mod.CoopHelper.IO;
 using Celeste.Mod.Entities;
 using Microsoft.Xna.Framework;
 using Monocle;
+using Celeste.Mod.Celeste3DEngine;
+
 
 namespace Celeste.Mod.CelesteChess;
 
@@ -17,8 +19,6 @@ public class BoardManagerEntity : Entity
     
     public GhostPieceEntity ghostPiece;
     
-    ChessPieceEntity lastMovedPiece = null;
-    
     float elapsedTurnTime = 0f;
     float elapsedOtherPlayerTime = 0f;
     float gameDuration = 800f;
@@ -28,15 +28,20 @@ public class BoardManagerEntity : Entity
     Player player;
     public bool whiteTurn = true;
     public bool isWhitePlayer;
+
+    bool debugEnabled = false;
     
     public bool canMoveThisTurn => (isWhitePlayer && whiteTurn) || (!isWhitePlayer && !whiteTurn);
     
     List<ChessTileEntity> tiles = new();
     List<ChessTileEntity> validMoves = new();
     public ChessTileEntity hoveredTile;
-    
-    public BoardManagerEntity(EntityData data, Vector2 offset) : base(data.Position + offset) { }
 
+    public BoardManagerEntity(EntityData data, Vector2 offset) : base(data.Position + offset)
+    {
+        EngineEntity.OnEngineLoad += BackgroundVisualiser.Load3DEnine;
+    }
+    
     public override void Awake(Scene scene)
     {
         base.Awake(scene);
@@ -59,10 +64,24 @@ public class BoardManagerEntity : Entity
         ghostPiece.enabled = false;
         Scene.Add(ghostPiece);
 
-        isWhitePlayer = CoopHelperModule.Session.SessionRole == 0;
+        if (CoopHelperModule.Session.IsInCoopSession)
+        {
+            isWhitePlayer = CoopHelperModule.Session.SessionRole == 0;
+        }
+        
+        //////////////////// DEBUG ////////////////////
+        else
+        {
+            debugEnabled = true;
+            isWhitePlayer = true;
+            whiteTurn = true;
+        }
+        //////////////////////////////////////////////////
         
         SetupTimers();
     }
+    
+    
 
     void SetupTimers()
     {
@@ -129,7 +148,6 @@ public class BoardManagerEntity : Entity
     public override void Update()
     {
         base.Update();
-        
         if (ChessHelpers.TryGetPlayer(out player))
         {
             player.carryOffset = new Vector2(0, -20);
@@ -221,64 +239,80 @@ public class BoardManagerEntity : Entity
     //Function used to compute the move of a piece made by the player or the network
     public void ComputeMove(ChessPieceEntity piece, ChessTileEntity moveTile, bool valid, bool sendToNetwork = true, bool switchTurns = true)
     {
+        bool isCastle = moveTile != null && moveTile.isCastleDestination;
+        ChessTileEntity rookDestination = moveTile?.rookDestinationTile;
+        ChessPieceEntity rook = moveTile?.castlePiece;
+        
         //Reset the color and state of all the tiles
         foreach (ChessTileEntity t in tiles)
         {
             t.colorTarget = ColorTarget.None;
             t.isValidForActualMove = false;
-            validMoves.Clear();
         }
+        validMoves.Clear();
+        ClearTileSpecialFlags();
         
         //Return of the move is not valid
         if (moveTile == null || piece == null || moveTile == piece.tile || valid == false) return;
         
         //Creation of information flags to store the move data, for displaying it later
         ChessTileEntity flagOriginTile = piece.tile;
-        bool flagCapture = (moveTile.enPassantCapturePiece ?? moveTile.piece) != null;
-        bool flagPromotion = piece.pieceType == Piece.Pawn && ((piece.IsWhite() && moveTile.gridCoordinates.Y == 0) || (!piece.IsWhite() && moveTile.gridCoordinates.Y == 7));
-        bool flagCastleKing = piece.pieceType == Piece.King && Math.Abs(moveTile.gridCoordinates.X - flagOriginTile.gridCoordinates.X) == 2 && moveTile.gridCoordinates.X > flagOriginTile.gridCoordinates.X;
-        bool flagCastleQueen = piece.pieceType == Piece.King && Math.Abs(moveTile.gridCoordinates.X - flagOriginTile.gridCoordinates.X) == 2 && moveTile.gridCoordinates.X < flagOriginTile.gridCoordinates.X;
+        Piece movedType = piece.pieceType;
+        ChessPieceEntity captured = GetCapturedPiece(piece, moveTile);
         
-        if (moveTile.isCastleDestination)
+        float dx = moveTile.gridCoordinates.X - flagOriginTile.gridCoordinates.X;
+        float dy = moveTile.gridCoordinates.Y - flagOriginTile.gridCoordinates.Y;
+        
+        bool flagCapture = captured != null;
+        bool doubleStep = movedType == Piece.Pawn && Math.Abs(dy) == 2;
+        bool flagPromotion = movedType == Piece.Pawn && ((piece.IsWhite() && moveTile.gridCoordinates.Y == 0) || (!piece.IsWhite() && moveTile.gridCoordinates.Y == 7));
+        bool flagCastleKing = movedType == Piece.King && Math.Abs(dx) == 2 && dx > 0;
+        bool flagCastleQueen = movedType == Piece.King && Math.Abs(dx) == 2 && dx < 0;
+
+        if (switchTurns)
         {
-            //If the move is a castling, we need to move the rook too
-            ChessTileEntity rookDestination = moveTile.rookDestinationTile;
-            ChessPieceEntity rook = moveTile.castlePiece;
-            
-            if (rook != null && rookDestination != null)
-            {
+            foreach (ChessTileEntity t in tiles)
+                if (t.piece != null) t.piece.pawnJustMovedTwice = false;
+        }
+
+        if (isCastle && rook != null && rookDestination != null)
+        {
+            if (sendToNetwork)
                 SendMoveToNetwork(rook, rookDestination, true);
-                MoveInducedByAction(rook.tile.gridPosition, rookDestination.gridPosition, false);
-            }
+            MoveInducedByAction(rook.tile.gridPosition, rookDestination.gridPosition, false);
         }
         
         //If the move is made by the player, send the move to the network
         if (sendToNetwork)
-        {
-            foreach (ChessTileEntity t in tiles)
-                if (t.piece != null) t.piece.pawnJustMovedTwice = false;
-            SendMoveToNetwork(piece, moveTile);
-        }
+            SendMoveToNetwork(piece, moveTile, false, doubleStep, captured != null && moveTile.piece == null);
         
         //Eating
-        Scene.Remove(moveTile.enPassantCapturePiece ?? moveTile.piece);
+        if (captured != null)
+        {
+            if (captured.tile != null) captured.tile.piece = null;
+            Scene.Remove(captured);
+        }
         
         //Move the piece to the tile and set the tile as the new tile of the piece
         SwapValuesForMove(piece, moveTile);
+        if(doubleStep) piece.pawnJustMovedTwice = true;
 
-        //Promotion
-        if (piece.pieceType == Piece.Pawn && ((piece.IsWhite() && moveTile.gridCoordinates.Y == 0) || (!piece.IsWhite() && moveTile.gridCoordinates.Y == 7)))
+        if (flagPromotion)
             piece.PromoteToQueen();
 
         if (switchTurns)
         {
             whiteTurn = !whiteTurn;
-            lastMovedPiece = piece;
+            
+            //////// DEBUG ////////////////////
+            if (debugEnabled)
+                isWhitePlayer = !isWhitePlayer;
+            //////////////////////////////////
             
             //Create the move to display and add it to the moves display entity
             MoveToDisplay move = new MoveToDisplay
             {
-                piece = piece.pieceType,
+                piece = movedType,
                 fromFile = (int)flagOriginTile.gridCoordinates.X,
                 fromRank = (int)flagOriginTile.gridCoordinates.Y,
                 toFile = (int)moveTile.gridCoordinates.X,
@@ -293,25 +327,19 @@ public class BoardManagerEntity : Entity
             Scene.Tracker.GetEntity<MovesDisplayEntity>()?.AddMove(move);
         }
 
-        foreach (ChessTileEntity tile in tiles)
-        {
-            tile.isCastleDestination = false;
-            tile.castlePiece = null;
-            tile.rookDestinationTile = null;
-            tile.isDoubleMoveDestination = false;
-            tile.enPassantCapturePiece = null;
-        }
+        ClearTileSpecialFlags();
     }
     
 
     //Called to send the move to the network, we only send the origin and destination of the move
-    public void SendMoveToNetwork(ChessPieceEntity piece, ChessTileEntity tile, bool rookCastling = false)
+    public void SendMoveToNetwork(ChessPieceEntity piece, ChessTileEntity tile, bool rookCastling = false,
+        bool doubleStep = false, bool enPassantCapture = false)
     {
         piece.originToNetwork = piece.tile.gridPosition;
         piece.destinationToNetwork = tile.gridPosition;
         piece.castleMove = rookCastling;
-        piece.pawnJustMovedTwice = tile.isDoubleMoveDestination;
-        piece.AteWithEnPassant = tile.enPassantCapturePiece != null;
+        piece.pawnJustMovedTwice = doubleStep;
+        piece.AteWithEnPassant = enPassantCapture;
         
         ModInterop.PostUpdate(piece.id);
     }
@@ -326,7 +354,6 @@ public class BoardManagerEntity : Entity
         
         if (piece == null || targetTile == null) return;
         
-        piece.pawnJustMovedTwice = pawnJustMovedTwice;
         
         //Like in the hook called by local moves, disable the holdable, move the piece and compute it 
         Holdable holdable = piece.Get<Holdable>();
@@ -335,9 +362,6 @@ public class BoardManagerEntity : Entity
         ChessHelpers.MoveSmoothlyEntity(piece, targetTile.Position + new Vector2(0, 6), 0.25f, () => { 
             holdable.Active = true;
         });
-
-        if (ateWtihEnPassant)
-            Scene.Remove(lastMovedPiece);
         
         ComputeMove(piece, targetTile, true, false, switchActions);
     }
@@ -372,6 +396,11 @@ public class BoardManagerEntity : Entity
     //Function used to simulate a move on the clone board only, to check if the king will be in check, called once by valid move to test
     public bool SimulateMove(ChessPieceEntity piece, ChessTileEntity destination)
     {
+        ChessPieceEntity captured = GetCapturedPiece(piece, destination);
+        
+        if (captured != null && captured.tile != null)
+            captured.tile.piece = null;
+        
         SwapValuesForMove(piece, destination);
         
         //If the simulated move puts the king in check, return false to mark the move as not safe / valid
@@ -427,6 +456,32 @@ public class BoardManagerEntity : Entity
         destination.piece = piece;
         piece.movedOnce = true;
     }
+
+    void ClearTileSpecialFlags()
+    {
+        foreach (ChessTileEntity t in tiles)
+        {
+            t.isCastleDestination = false;
+            t.castlePiece = null;
+            t.rookDestinationTile = null;
+            t.isDoubleMoveDestination = false;
+            t.enPassantCapturePiece = null;
+        }
+    }
+    
+    ChessPieceEntity GetCapturedPiece(ChessPieceEntity piece, ChessTileEntity dest)
+    {
+        if (dest.piece != null)
+            return dest.piece;
+
+        if (piece.pieceType == Piece.Pawn && piece.tile != null
+                                          && dest.gridCoordinates.X != piece.tile.gridCoordinates.X)
+        {
+            return GetTileByGridCoordinates(
+                new Vector2(dest.gridCoordinates.X, piece.tile.gridCoordinates.Y))?.piece;
+        }
+        return null;
+    }
     
     //Get a tile by its grid position
     public ChessTileEntity GetTileByGridPosition(int gridPosition)
@@ -450,8 +505,16 @@ public class BoardManagerEntity : Entity
     {
         base.Removed(scene);
         if (Instance == this) Instance = null;
+        EngineEntity.OnEngineLoad -= BackgroundVisualiser.Load3DEnine;
     }
-    
+
+    public override void SceneEnd(Scene scene)
+    {
+        base.SceneEnd(scene);
+        if (Instance == this) Instance = null;
+        EngineEntity.OnEngineLoad -= BackgroundVisualiser.Load3DEnine;
+    }
+
     //Struct used only when creating the clone, to store the piece type and color of the cloned piece
     struct PieceInfo
     {
